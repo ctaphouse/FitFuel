@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="NpmRunBuildCSS" BeforeTargets="BeforeBuild">
+    <Exec Command="npm run build:css" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+</Project>

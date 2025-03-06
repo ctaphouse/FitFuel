@@ -11,7 +11,7 @@ namespace FitFuel.Api.Data
         }
 
         // Add your DbSet properties here
-         public DbSet<Gecko> Geckos { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
