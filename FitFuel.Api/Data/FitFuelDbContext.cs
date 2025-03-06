@@ -10,7 +10,12 @@ namespace FitFuel.Api.Data
         {
         }
 
-        // Add your DbSet properties here
+        public DbSet<Item> Items { get; set; } = null!;
+        public DbSet<ItemType> ItemTypes { get; set; } = null!;
+        public DbSet<Recipe> Recipes { get; set; } = null!;
+        public DbSet<RecipeItem> RecipeItems { get; set; } = null!;
+        public DbSet<AdjustedItem> AdjustedItems { get; set; } = null!;
+        public DbSet<AdjustedRecipe> AdjustedRecipes { get; set; } = null!;       // Add your DbSet properties here
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
