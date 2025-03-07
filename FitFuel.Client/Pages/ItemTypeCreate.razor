@@ -1,0 +1,62 @@
+@page "/itemtypes/create"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject ItemTypeService ItemTypeService
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<PageTitle>Create Item Type</PageTitle>
+
+<div class="container">
+    <h1 class="my-4">Create Item Type</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="@_itemType" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <InputText id="name" @bind-Value="_itemType.Name" class="form-control" />
+                    <ValidationMessage For="@(() => _itemType.Name)" />
+                </div>
+                
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary me-2">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ItemTypeDto _itemType = new ItemTypeDto();
+    
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var success = await ItemTypeService.CreateItemTypeAsync(_itemType);
+            if (success)
+            {
+                await DialogService.ShowMessageBox("Success", "Item type created successfully.");
+                NavigationManager.NavigateTo("/itemtypes");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to create item type.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error creating item type: {ex.Message}");
+        }
+    }
+    
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/itemtypes");
+    }
+}

@@ -1,0 +1,113 @@
+@page "/itemtypes/edit/{Id:int}"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject ItemTypeService ItemTypeService
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<PageTitle>Edit Item Type</PageTitle>
+
+<div class="container">
+    <h1 class="my-4">Edit Item Type</h1>
+    
+    @if (_loading)
+    {
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (_itemType == null)
+    {
+        <div class="alert alert-danger">
+            Item type not found.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <EditForm Model="@_itemType" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    
+                    <div class="mb-3">
+                        <label for="id" class="form-label">ID</label>
+                        <InputNumber id="id" @bind-Value="_itemType.Id" class="form-control" disabled />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <InputText id="name" @bind-Value="_itemType.Name" class="form-control" />
+                        <ValidationMessage For="@(() => _itemType.Name)" />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary me-2">Save</button>
+                        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private ItemTypeDto? _itemType;
+    private bool _loading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItemType();
+    }
+    
+    private async Task LoadItemType()
+    {
+        _loading = true;
+        try
+        {
+            _itemType = await ItemTypeService.GetItemTypeAsync(Id);
+            if (_itemType == null)
+            {
+                await DialogService.ShowMessageBox("Error", $"Item type with ID {Id} not found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load item type: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task HandleValidSubmit()
+    {
+        if (_itemType == null) return;
+        
+        try
+        {
+            var success = await ItemTypeService.UpdateItemTypeAsync(_itemType);
+            if (success)
+            {
+                await DialogService.ShowMessageBox("Success", "Item type updated successfully.");
+                NavigationManager.NavigateTo("/itemtypes");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to update item type.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error updating item type: {ex.Message}");
+        }
+    }
+    
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/itemtypes");
+    }
+}
