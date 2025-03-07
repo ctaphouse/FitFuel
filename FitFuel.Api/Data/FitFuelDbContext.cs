@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using FitFuel.Api.Models;
+using FitFuel.Api.Data.Configurations;
 
 namespace FitFuel.Api.Data
 {
@@ -10,18 +11,25 @@ namespace FitFuel.Api.Data
         {
         }
 
+        // DbSet properties for all entities
         public DbSet<Item> Items { get; set; } = null!;
         public DbSet<ItemType> ItemTypes { get; set; } = null!;
         public DbSet<Recipe> Recipes { get; set; } = null!;
         public DbSet<RecipeItem> RecipeItems { get; set; } = null!;
         public DbSet<AdjustedItem> AdjustedItems { get; set; } = null!;
-        public DbSet<AdjustedRecipe> AdjustedRecipes { get; set; } = null!;       // Add your DbSet properties here
-
+        public DbSet<AdjustedRecipe> AdjustedRecipes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            // Customize entity mappings here if needed
+            
+            // Apply entity configurations
+            modelBuilder.ApplyConfiguration(new ItemTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new ItemConfiguration());
+            modelBuilder.ApplyConfiguration(new RecipeConfiguration());
+            modelBuilder.ApplyConfiguration(new RecipeItemConfiguration());
+            modelBuilder.ApplyConfiguration(new AdjustedItemConfiguration());
+            modelBuilder.ApplyConfiguration(new AdjustedRecipeConfiguration());
         }
     }
 }
