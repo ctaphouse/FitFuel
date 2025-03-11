@@ -1,0 +1,241 @@
+@page "/items/edit/{Id:int}"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<PageTitle>Edit Item</PageTitle>
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Edit Item</h1>
+            <a href="/items" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to List
+            </a>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            @if (_loading)
+            {
+                <div class="flex justify-center items-center p-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                    <span class="sr-only">Loading...</span>
+                </div>
+            }
+            else if (_item == null)
+            {
+                <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">
+                                Item not found.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="p-6">
+                    <EditForm Model="@_updateItem" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="mb-4 text-red-600 text-sm" />
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                                <div class="mt-1">
+                                    <InputText id="name" @bind-Value="_updateItem.Name" 
+                                             class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                    <ValidationMessage For="@(() => _updateItem.Name)" class="mt-1 text-sm text-red-600" />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="itemTypeId" class="block text-sm font-medium text-gray-700">Item Type</label>
+                                <div class="mt-1">
+                                    <InputSelect id="itemTypeId" @bind-Value="_updateItem.ItemTypeId" 
+                                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="0">Select Item Type</option>
+                                        @if (_itemTypes != null)
+                                        {
+                                            @foreach (var itemType in _itemTypes)
+                                            {
+                                                <option value="@itemType.Id">@itemType.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => _updateItem.ItemTypeId)" class="mt-1 text-sm text-red-600" />
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div>
+                                    <label for="calories" class="block text-sm font-medium text-gray-700">Calories</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="calories" @bind-Value="_updateItem.Calories" 
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _updateItem.Calories)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="protein" class="block text-sm font-medium text-gray-700">Protein (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="protein" @bind-Value="_updateItem.Protein" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _updateItem.Protein)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="carbohydrates" class="block text-sm font-medium text-gray-700">Carbohydrates (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="carbohydrates" @bind-Value="_updateItem.Carbohydrates" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _updateItem.Carbohydrates)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="fat" class="block text-sm font-medium text-gray-700">Fat (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="fat" @bind-Value="_updateItem.Fat" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _updateItem.Fat)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="fiber" class="block text-sm font-medium text-gray-700">Fiber (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="fiber" @bind-Value="_updateItem.Fiber" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _updateItem.Fiber)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="sugars" class="block text-sm font-medium text-gray-700">Sugars (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="sugars" @bind-Value="_updateItem.Sugars" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _updateItem.Sugars)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-5 flex justify-start space-x-3">
+                                <button type="submit" 
+                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Save
+                                </button>
+                                <button type="button" @onclick="Cancel"
+                                        class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private ItemDto? _item;
+    private ItemUpdateDto _updateItem = new ItemUpdateDto();
+    private List<ItemTypeDto>? _itemTypes;
+    private bool _loading = true;
+    
+    [Inject]
+    private ItemService ItemService { get; set; } = default!;
+    
+    [Inject]
+    private ItemTypeService ItemTypeService { get; set; } = default!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItemTypes();
+        await LoadItem();
+    }
+    
+    private async Task LoadItemTypes()
+    {
+        try
+        {
+            _itemTypes = await ItemTypeService.GetItemTypesAsync();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load item types: {ex.Message}");
+        }
+    }
+    
+    private async Task LoadItem()
+    {
+        _loading = true;
+        try
+        {
+            _item = await ItemService.GetItemAsync(Id);
+            if (_item != null)
+            {
+                // Map ItemDto to ItemUpdateDto
+                _updateItem.Name = _item.Name;
+                _updateItem.Calories = _item.Calories;
+                _updateItem.Protein = _item.Protein;
+                _updateItem.Carbohydrates = _item.Carbohydrates;
+                _updateItem.Fiber = _item.Fiber;
+                _updateItem.Sugars = _item.Sugars;
+                _updateItem.Fat = _item.Fat;
+                _updateItem.ItemTypeId = _item.ItemTypeId;
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", $"Item with ID {Id} not found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load item: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var success = await ItemService.UpdateItemAsync(Id, _updateItem);
+            if (success)
+            {
+                await DialogService.ShowMessageBox("Success", "Item updated successfully.");
+                NavigationManager.NavigateTo("/items");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to update item.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error updating item: {ex.Message}");
+        }
+    }
+    
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/items");
+    }
+}

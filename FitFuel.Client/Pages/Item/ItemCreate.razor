@@ -1,0 +1,191 @@
+@page "/items/create"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<PageTitle>Create Item</PageTitle>
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Create Item</h1>
+            <a href="/items" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to List
+            </a>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="p-6">
+                @if (_loading)
+                {
+                    <div class="flex justify-center items-center p-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="@_item" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="mb-4 text-red-600 text-sm" />
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                                <div class="mt-1">
+                                    <InputText id="name" @bind-Value="_item.Name" 
+                                             class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                    <ValidationMessage For="@(() => _item.Name)" class="mt-1 text-sm text-red-600" />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="itemTypeId" class="block text-sm font-medium text-gray-700">Item Type</label>
+                                <div class="mt-1">
+                                    <InputSelect id="itemTypeId" @bind-Value="_item.ItemTypeId" 
+                                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="0">Select Item Type</option>
+                                        @if (_itemTypes != null)
+                                        {
+                                            @foreach (var itemType in _itemTypes)
+                                            {
+                                                <option value="@itemType.Id">@itemType.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => _item.ItemTypeId)" class="mt-1 text-sm text-red-600" />
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div>
+                                    <label for="calories" class="block text-sm font-medium text-gray-700">Calories</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="calories" @bind-Value="_item.Calories" 
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _item.Calories)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="protein" class="block text-sm font-medium text-gray-700">Protein (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="protein" @bind-Value="_item.Protein" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _item.Protein)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="carbohydrates" class="block text-sm font-medium text-gray-700">Carbohydrates (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="carbohydrates" @bind-Value="_item.Carbohydrates" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _item.Carbohydrates)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="fat" class="block text-sm font-medium text-gray-700">Fat (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="fat" @bind-Value="_item.Fat" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _item.Fat)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="fiber" class="block text-sm font-medium text-gray-700">Fiber (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="fiber" @bind-Value="_item.Fiber" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _item.Fiber)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="sugars" class="block text-sm font-medium text-gray-700">Sugars (g)</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="sugars" @bind-Value="_item.Sugars" step="0.1"
+                                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                                        <ValidationMessage For="@(() => _item.Sugars)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-5 flex justify-start space-x-3">
+                                <button type="submit" 
+                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Save
+                                </button>
+                                <button type="button" @onclick="Cancel"
+                                        class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ItemCreateDto _item = new ItemCreateDto();
+    private List<ItemTypeDto>? _itemTypes;
+    private bool _loading = true;
+    
+    [Inject]
+    private ItemService ItemService { get; set; } = default!;
+    
+    [Inject]
+    private ItemTypeService ItemTypeService { get; set; } = default!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItemTypes();
+    }
+    
+    private async Task LoadItemTypes()
+    {
+        _loading = true;
+        try
+        {
+            _itemTypes = await ItemTypeService.GetItemTypesAsync();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load item types: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var success = await ItemService.CreateItemAsync(_item);
+            if (success)
+            {
+                await DialogService.ShowMessageBox("Success", "Item created successfully.");
+                NavigationManager.NavigateTo("/items");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to create item.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error creating item: {ex.Message}");
+        }
+    }
+    
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/items");
+    }
+}
