@@ -18,7 +18,9 @@ namespace FitFuel.Client.Services
             int pageNumber = 1, 
             int pageSize = 10, 
             string? searchTerm = null, 
-            int? itemTypeId = null)
+            int? itemTypeId = null,
+            string sortBy = "Name",
+            bool ascending = true)
         {
             var queryString = $"api/Item?pageNumber={pageNumber}&pageSize={pageSize}";
             
@@ -31,6 +33,8 @@ namespace FitFuel.Client.Services
             {
                 queryString += $"&itemTypeId={itemTypeId.Value}";
             }
+            
+            queryString += $"&sortBy={Uri.EscapeDataString(sortBy)}&ascending={ascending}";
             
             var response = await _httpClient.GetFromJsonAsync<ApiResponse<PaginatedResponseDto<ItemDto>>>(queryString);
             return response?.Data ?? new PaginatedResponseDto<ItemDto>();

@@ -24,59 +24,92 @@ namespace FitFuel.Api.Controllers
             _logger = logger;
         }
 
-        // GET: api/Item
-        [HttpGet]
-        public async Task<ActionResult<ApiResponse<PaginatedResponseDto<ItemDto>>>> GetItems(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] string? searchTerm = null,
-            [FromQuery] int? itemTypeId = null)
+// GET: api/Item
+[HttpGet]
+public async Task<ActionResult<ApiResponse<PaginatedResponseDto<ItemDto>>>> GetItems(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? searchTerm = null,
+    [FromQuery] int? itemTypeId = null,
+    [FromQuery] string sortBy = "Name",
+    [FromQuery] bool ascending = true)
+{
+    try
+    {
+        var query = _context.Items
+            .Include(i => i.ItemType)
+            .AsQueryable();
+
+        // Apply filters
+        if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            try
-            {
-                var query = _context.Items
-                    .Include(i => i.ItemType)
-                    .AsQueryable();
-
-                // Apply filters
-                if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    query = query.Where(i => i.Name.Contains(searchTerm));
-                }
-
-                if (itemTypeId.HasValue)
-                {
-                    query = query.Where(i => i.ItemTypeId == itemTypeId.Value);
-                }
-
-                // Get total count for pagination
-                var totalCount = await query.CountAsync();
-
-                // Apply pagination
-                var items = await query
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                var itemDtos = _mapper.Map<List<ItemDto>>(items);
-
-                // Create paginated response
-                var paginatedResponse = new PaginatedResponseDto<ItemDto>
-                {
-                    Items = itemDtos,
-                    TotalCount = totalCount,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize
-                };
-
-                return Ok(ApiResponse<PaginatedResponseDto<ItemDto>>.SuccessResponse(paginatedResponse));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting items");
-                return StatusCode(500, ApiResponse<PaginatedResponseDto<ItemDto>>.ErrorResponse("An error occurred while retrieving items."));
-            }
+            query = query.Where(i => i.Name.Contains(searchTerm));
         }
+
+        if (itemTypeId.HasValue)
+        {
+            query = query.Where(i => i.ItemTypeId == itemTypeId.Value);
+        }
+
+        // Apply sorting
+        query = ApplySorting(query, sortBy, ascending);
+
+        // Get total count for pagination
+        var totalCount = await query.CountAsync();
+
+        // Apply pagination
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var itemDtos = _mapper.Map<List<ItemDto>>(items);
+
+        // Create paginated response
+        var paginatedResponse = new PaginatedResponseDto<ItemDto>
+        {
+            Items = itemDtos,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        return Ok(ApiResponse<PaginatedResponseDto<ItemDto>>.SuccessResponse(paginatedResponse));
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error getting items");
+        return StatusCode(500, ApiResponse<PaginatedResponseDto<ItemDto>>.ErrorResponse("An error occurred while retrieving items."));
+    }
+}
+
+// Helper method to apply sorting to query
+private IQueryable<Item> ApplySorting(IQueryable<Item> query, string sortBy, bool ascending)
+{
+    // Default to sorting by Name if invalid property is provided
+    return sortBy?.ToLower() switch
+    {
+        "name" => ascending 
+            ? query.OrderBy(i => i.Name) 
+            : query.OrderByDescending(i => i.Name),
+        "calories" => ascending 
+            ? query.OrderBy(i => i.Calories) 
+            : query.OrderByDescending(i => i.Calories),
+        "protein" => ascending 
+            ? query.OrderBy(i => i.Protein) 
+            : query.OrderByDescending(i => i.Protein),
+        "carbohydrates" => ascending 
+            ? query.OrderBy(i => i.Carbohydrates) 
+            : query.OrderByDescending(i => i.Carbohydrates),
+        "fat" => ascending 
+            ? query.OrderBy(i => i.Fat) 
+            : query.OrderByDescending(i => i.Fat),
+        "itemtype" => ascending 
+            ? query.OrderBy(i => i.ItemType.Name) 
+            : query.OrderByDescending(i => i.ItemType.Name),
+        _ => query.OrderBy(i => i.Name)
+    };
+}
 
         // GET: api/Item/5
         [HttpGet("{id}")]
