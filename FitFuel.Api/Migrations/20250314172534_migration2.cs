@@ -5,7 +5,7 @@
 namespace FitFuel.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class columnreduction : Migration
+    public partial class migration2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

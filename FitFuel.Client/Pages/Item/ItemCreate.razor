@@ -1,8 +1,10 @@
 @page "/items/create"
 @using FitFuel.Shared.Dtos
 @using FitFuel.Client.Services
+@using System.Globalization
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Create Item</PageTitle>
 
@@ -31,17 +33,17 @@
                         <DataAnnotationsValidator />
                         <ValidationSummary class="mb-4 text-red-600 text-sm" />
                         
-                        <div class="space-y-6 bg-gray-200 p-6 rounded-md">
-                            <div>
+                        <div class="space-y-6 bg-slate-200 p-6 rounded-md">
+                            <div class="max-w-md">
                                 <label for="name" class="block text-sm font-medium text-gray-800">Name</label>
                                 <div class="mt-1">
-                                    <InputText id="name" @bind-Value="_item.Name" 
+                                    <InputText id="name" @bind-Value="_item.Name" maxlength="50"
                                              class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
                                     <ValidationMessage For="@(() => _item.Name)" class="mt-1 text-sm text-red-600" />
                                 </div>
                             </div>
                             
-                            <div>
+                            <div class="max-w-xs">
                                 <label for="itemTypeId" class="block text-sm font-medium text-gray-800">Item Type</label>
                                 <div class="mt-1">
                                     <InputSelect id="itemTypeId" @bind-Value="_item.ItemTypeId" 
@@ -59,60 +61,82 @@
                                 </div>
                             </div>
                             
-                            <div class="bg-white p-4 rounded-md border border-gray-200 bg-green-100">
-                                <h3 class="text-lg font-medium text-indigo-700 mb-4">Nutritional Information</h3>
-                                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                    <div>
+                            <div class="bg-slate-300 p-4 rounded-md border border-gray-200 bg-green-50">
+                                <h3 class="text-lg font-medium text-indigo-700 mb-4">Nutritional Information (per 100g)</h3>
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <div class="max-w-xs">
                                         <label for="calories" class="block text-sm font-medium text-gray-800">Calories</label>
-                                        <div class="mt-1">
+                                        <div class="mt-1 relative">
                                             <InputNumber id="calories" @bind-Value="_item.Calories" 
-                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                                      min="0" max="9999999" 
+                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900 text-right" />
                                             <ValidationMessage For="@(() => _item.Calories)" class="mt-1 text-sm text-red-600" />
+                                            <div class="text-xs text-gray-500 mt-1">Integer (max 9,999,999)</div>
                                         </div>
                                     </div>
                                     
-                                    <div>
+                                    <div class="max-w-xs">
                                         <label for="protein" class="block text-sm font-medium text-gray-800">Protein (g)</label>
-                                        <div class="mt-1">
-                                            <InputNumber id="protein" @bind-Value="_item.Protein" step="0.1"
-                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <div class="mt-1 relative">
+                                            <input type="number" id="protein" value="@_formattedProtein"
+                                                   @onchange="@(e => OnProteinChanged(e.Value?.ToString()))"
+                                                   @onblur="@(e => FormatProtein())"
+                                                   min="0" max="99999999.99" step="0.01"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900 text-right" />
                                             <ValidationMessage For="@(() => _item.Protein)" class="mt-1 text-sm text-red-600" />
+                                            <div class="text-xs text-gray-500 mt-1">Decimal(10,2)</div>
                                         </div>
                                     </div>
                                     
-                                    <div>
-                                        <label for="carbohydrates" class="block text-sm font-medium text-gray-800">Carbohydrates (g)</label>
-                                        <div class="mt-1">
-                                            <InputNumber id="carbohydrates" @bind-Value="_item.Carbohydrates" step="0.1"
-                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                    <div class="max-w-xs">
+                                        <label for="carbohydrates" class="block text-sm font-medium text-gray-800">Carbs (g)</label>
+                                        <div class="mt-1 relative">
+                                            <input type="number" id="carbohydrates" value="@_formattedCarbs"
+                                                   @onchange="@(e => OnCarbsChanged(e.Value?.ToString()))"
+                                                   @onblur="@(e => FormatCarbs())"
+                                                   min="0" max="99999999.99" step="0.01"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900 text-right" />
                                             <ValidationMessage For="@(() => _item.Carbohydrates)" class="mt-1 text-sm text-red-600" />
+                                            <div class="text-xs text-gray-500 mt-1">Decimal(10,2)</div>
                                         </div>
                                     </div>
                                     
-                                    <div>
+                                    <div class="max-w-xs">
                                         <label for="fat" class="block text-sm font-medium text-gray-800">Fat (g)</label>
-                                        <div class="mt-1">
-                                            <InputNumber id="fat" @bind-Value="_item.Fat" step="0.1"
-                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <div class="mt-1 relative">
+                                            <input type="number" id="fat" value="@_formattedFat"
+                                                   @onchange="@(e => OnFatChanged(e.Value?.ToString()))"
+                                                   @onblur="@(e => FormatFat())"
+                                                   min="0" max="99999999.99" step="0.01"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900 text-right" />
                                             <ValidationMessage For="@(() => _item.Fat)" class="mt-1 text-sm text-red-600" />
+                                            <div class="text-xs text-gray-500 mt-1">Decimal(10,2)</div>
                                         </div>
                                     </div>
                                     
-                                    <div>
+                                    <div class="max-w-xs">
                                         <label for="fiber" class="block text-sm font-medium text-gray-800">Fiber (g)</label>
-                                        <div class="mt-1">
-                                            <InputNumber id="fiber" @bind-Value="_item.Fiber" step="0.1"
-                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <div class="mt-1 relative">
+                                            <input type="number" id="fiber" value="@_formattedFiber"
+                                                   @onchange="@(e => OnFiberChanged(e.Value?.ToString()))"
+                                                   @onblur="@(e => FormatFiber())"
+                                                   min="0" max="99999999.99" step="0.01"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900 text-right" />
                                             <ValidationMessage For="@(() => _item.Fiber)" class="mt-1 text-sm text-red-600" />
+                                            <div class="text-xs text-gray-500 mt-1">Decimal(10,2)</div>
                                         </div>
                                     </div>
                                     
-                                    <div>
+                                    <div class="max-w-xs">
                                         <label for="sugars" class="block text-sm font-medium text-gray-800">Sugars (g)</label>
-                                        <div class="mt-1">
-                                            <InputNumber id="sugars" @bind-Value="_item.Sugars" step="0.1"
-                                                      class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <div class="mt-1 relative">
+                                            <input type="number" id="sugars" value="@_formattedSugars"
+                                                   @onchange="@(e => OnSugarsChanged(e.Value?.ToString()))"
+                                                   @onblur="@(e => FormatSugars())"
+                                                   min="0" max="99999999.99" step="0.01"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900 text-right" />
                                             <ValidationMessage For="@(() => _item.Sugars)" class="mt-1 text-sm text-red-600" />
+                                            <div class="text-xs text-gray-500 mt-1">Decimal(10,2)</div>
                                         </div>
                                     </div>
                                 </div>
@@ -141,6 +165,13 @@
     private List<ItemTypeDto>? _itemTypes;
     private bool _loading = true;
     
+    // Formatted display values for decimal fields
+    private string _formattedProtein = "0.00";
+    private string _formattedCarbs = "0.00";
+    private string _formattedFat = "0.00";
+    private string _formattedFiber = "0.00";
+    private string _formattedSugars = "0.00";
+    
     [Inject]
     private ItemService ItemService { get; set; } = default!;
     
@@ -150,6 +181,17 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadItemTypes();
+        
+        // Set default values
+        _item.Calories = 0;
+        _item.Protein = 0;
+        _item.Carbohydrates = 0;
+        _item.Fat = 0;
+        _item.Fiber = 0;
+        _item.Sugars = 0;
+        
+        // Format initial values
+        FormatAllDecimalFields();
     }
     
     private async Task LoadItemTypes()
@@ -166,10 +208,99 @@
         _loading = false;
     }
     
+    // Formatting handlers for each field
+    private void FormatProtein() 
+    {
+        _formattedProtein = _item.Protein.ToString("F2", CultureInfo.InvariantCulture);
+        StateHasChanged();
+    }
+    
+    private void FormatCarbs() 
+    {
+        _formattedCarbs = _item.Carbohydrates.ToString("F2", CultureInfo.InvariantCulture);
+        StateHasChanged();
+    }
+    
+    private void FormatFat() 
+    {
+        _formattedFat = _item.Fat.ToString("F2", CultureInfo.InvariantCulture);
+        StateHasChanged();
+    }
+    
+    private void FormatFiber() 
+    {
+        _formattedFiber = _item.Fiber.ToString("F2", CultureInfo.InvariantCulture);
+        StateHasChanged();
+    }
+    
+    private void FormatSugars() 
+    {
+        _formattedSugars = _item.Sugars.ToString("F2", CultureInfo.InvariantCulture);
+        StateHasChanged();
+    }
+    
+    private void FormatAllDecimalFields()
+    {
+        FormatProtein();
+        FormatCarbs();
+        FormatFat();
+        FormatFiber();
+        FormatSugars();
+    }
+    
+    // Value change handlers for each field
+    private void OnProteinChanged(string? value)
+    {
+        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+        {
+            _item.Protein = result;
+        }
+    }
+    
+    private void OnCarbsChanged(string? value)
+    {
+        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+        {
+            _item.Carbohydrates = result;
+        }
+    }
+    
+    private void OnFatChanged(string? value)
+    {
+        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+        {
+            _item.Fat = result;
+        }
+    }
+    
+    private void OnFiberChanged(string? value)
+    {
+        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+        {
+            _item.Fiber = result;
+        }
+    }
+    
+    private void OnSugarsChanged(string? value)
+    {
+        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
+        {
+            _item.Sugars = result;
+        }
+    }
+    
     private async Task HandleValidSubmit()
     {
         try
         {
+            // Check additional validations for decimal(10,2) constraints
+            if (!ValidateDecimalPrecision())
+            {
+                await DialogService.ShowMessageBox("Validation Error", 
+                    "One or more numeric values exceed the allowed precision (decimal(10,2)).\nMaximum 8 digits before decimal and 2 digits after.");
+                return;
+            }
+            
             var success = await ItemService.CreateItemAsync(_item);
             if (success)
             {
@@ -185,6 +316,45 @@
         {
             await DialogService.ShowMessageBox("Error", $"Error creating item: {ex.Message}");
         }
+    }
+    
+    private bool ValidateDecimalPrecision()
+    {
+        // For decimal(10,2), we can have at most 8 digits before the decimal point
+        // and exactly 2 digits after the decimal point
+        bool isValid = true;
+        
+        // Check Calories (int, so just check max value)
+        if (_item.Calories > 99999999)
+        {
+            isValid = false;
+        }
+        
+        // Check decimal fields
+        foreach (var value in new[] { 
+            _item.Protein, _item.Carbohydrates, _item.Fiber, _item.Sugars, _item.Fat 
+        })
+        {
+            // Convert to string and analyze parts
+            var valueStr = value.ToString(CultureInfo.InvariantCulture);
+            var parts = valueStr.Split('.');
+            
+            // Check integer part (before decimal)
+            if (parts[0].Length > 8)
+            {
+                isValid = false;
+                break;
+            }
+            
+            // Check decimal part if it exists
+            if (parts.Length > 1 && parts[1].Length > 2)
+            {
+                isValid = false;
+                break;
+            }
+        }
+        
+        return isValid;
     }
     
     private void Cancel()

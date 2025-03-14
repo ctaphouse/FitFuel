@@ -12,7 +12,7 @@ namespace FitFuel.Api.Migrations
 {
     [DbContext(typeof(FitFuelDbContext))]
     [Migration("20250314172534_column reduction")]
-    partial class columnreduction
+    partial class migration2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
