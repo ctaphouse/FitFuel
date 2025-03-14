@@ -18,7 +18,7 @@ namespace FitFuel.Api.Data.Configurations
                 
             builder.Property(ri => ri.GramEquivalent)
                 .IsRequired()
-                .HasColumnType("decimal(18,2)");
+                .HasColumnType("decimal(10,2)");
                 
             // Relationships
             builder.HasOne(ri => ri.Recipe)
