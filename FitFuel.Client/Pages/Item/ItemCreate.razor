@@ -43,11 +43,18 @@
                                 </div>
                             </div>
                             
+                            @{
+                                var itemTypeClass = "shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900";
+                                if (IsItemTypeInvalid())
+                                {
+                                    itemTypeClass += " border-red-500";
+                                }
+                            }
+                            
                             <div class="max-w-xs">
                                 <label for="itemTypeId" class="block text-sm font-medium text-gray-800">Item Type</label>
                                 <div class="mt-1">
-                                    <InputSelect id="itemTypeId" @bind-Value="_item.ItemTypeId" 
-                                                class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900">
+                                    <InputSelect id="itemTypeId" @bind-Value="_item.ItemTypeId" class="@itemTypeClass">
                                         <option value="0">Select Item Type</option>
                                         @if (_itemTypes != null)
                                         {
@@ -58,6 +65,10 @@
                                         }
                                     </InputSelect>
                                     <ValidationMessage For="@(() => _item.ItemTypeId)" class="mt-1 text-sm text-red-600" />
+                                    @if (IsItemTypeInvalid())
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">Please select an item type</div>
+                                    }
                                 </div>
                             </div>
                             
@@ -164,6 +175,7 @@
     private ItemCreateDto _item = new ItemCreateDto();
     private List<ItemTypeDto>? _itemTypes;
     private bool _loading = true;
+    private bool _formSubmitted = false;
     
     // Formatted display values for decimal fields
     private string _formattedProtein = "0.00";
@@ -206,6 +218,11 @@
             await DialogService.ShowMessageBox("Error", $"Failed to load item types: {ex.Message}");
         }
         _loading = false;
+    }
+    
+    private bool IsItemTypeInvalid()
+    {
+        return _item.ItemTypeId <= 0 && _formSubmitted;
     }
     
     // Formatting handlers for each field
@@ -291,6 +308,14 @@
     
     private async Task HandleValidSubmit()
     {
+        _formSubmitted = true;
+        
+        // Additional custom validation
+        if (_item.ItemTypeId <= 0)
+        {
+            return; // Don't proceed if item type is invalid
+        }
+        
         try
         {
             // Check additional validations for decimal(10,2) constraints
@@ -359,6 +384,7 @@
     
     private void Cancel()
     {
+        _formSubmitted = false;
         NavigationManager.NavigateTo("/items");
     }
 }
