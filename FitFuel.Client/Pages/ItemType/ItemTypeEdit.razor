@@ -7,75 +7,75 @@
 
 <PageTitle>Edit Item Type</PageTitle>
 
-<div class="min-h-screen bg-gray-50 py-8">
+<div class="min-h-screen bg-gray-100 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Edit Item Type</h1>
+            <h1 class="text-2xl font-bold text-indigo-800">Edit Item Type</h1>
             <a href="/itemtypes" 
-               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Back to List
             </a>
         </div>
         
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-            @if (_loading)
-            {
-                <div class="flex justify-center items-center p-12">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-                    <span class="sr-only">Loading...</span>
-                </div>
-            }
-            else if (_itemType == null)
-            {
-                <div class="bg-red-50 border-l-4 border-red-400 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-red-700">
-                                Item type not found.
-                            </p>
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+            <div class="p-6">
+                @if (_loading)
+                {
+                    <div class="flex justify-center items-center p-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                }
+                else if (_itemType == null)
+                {
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Item type not found.
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-            else
-            {
-                <div class="p-6">
+                }
+                else
+                {
                     <EditForm Model="@_itemType" OnValidSubmit="HandleValidSubmit">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="mb-4 text-red-600 text-sm" />
                         
-                        <div class="space-y-6">
+                        <div class="space-y-6 bg-slate-200 p-6 rounded-md">
                             @* ID field is now hidden, we keep the binding but don't show it *@
                             <InputNumber id="id" @bind-Value="_itemType.Id" class="hidden" />
                             
-                            <div>
+                            <div class="max-w-md">
                                 <label for="name" class="block text-sm font-medium text-gray-800">Name</label>
                                 <div class="mt-1">
-                                    <InputText id="name" @bind-Value="_itemType.Name" 
-                                             class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-400 rounded-md bg-white text-gray-900" />
+                                    <InputText id="name" @bind-Value="_itemType.Name" maxlength="50"
+                                             class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
                                     <ValidationMessage For="@(() => _itemType.Name)" class="mt-1 text-sm text-red-600" />
                                 </div>
                             </div>
                             
-                            <div class="pt-5 flex justify-start space-x-3">
-                                <button type="submit" 
-                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Save
-                                </button>
+                            <div class="pt-5 flex justify-end space-x-3">
                                 <button type="button" @onclick="Cancel"
                                         class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     Cancel
                                 </button>
+                                <button type="submit" 
+                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Save
+                                </button>
                             </div>
                         </div>
                     </EditForm>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>
@@ -111,7 +111,7 @@
     }
     
     private async Task HandleValidSubmit()
-    {
+    {       
         if (_itemType == null) return;
         
         try
