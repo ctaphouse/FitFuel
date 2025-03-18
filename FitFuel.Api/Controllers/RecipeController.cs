@@ -43,6 +43,9 @@ namespace FitFuel.Api.Controllers
                     query = query.Where(r => r.Name.Contains(searchTerm));
                 }
 
+                // Always order by name
+                query = query.OrderBy(r => r.Name);
+
                 // Get total count for pagination
                 var totalCount = await query.CountAsync();
 

@@ -14,9 +14,9 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https:/
 builder.Services.AddScoped<ItemTypeService>();
 builder.Services.AddScoped<ItemService>();
 builder.Services.AddScoped<AdjustedItemService>();
-/* builder.Services.AddScoped<RecipeService>();
+builder.Services.AddScoped<RecipeService>();
 builder.Services.AddScoped<RecipeItemService>();
-builder.Services.AddScoped<AdjustedRecipeService>(); */
+builder.Services.AddScoped<AdjustedRecipeService>();
 builder.Services.AddScoped<IDialogService, DialogService>();
 
 builder.Services.AddSingleton<AppState>();

@@ -1,0 +1,544 @@
+@page "/recipes/edit/{Id:int}"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Edit Recipe</PageTitle>
+
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-indigo-800">Edit Recipe</h1>
+            <a href="/recipes" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to List
+            </a>
+        </div>
+        
+        @if (_loading)
+        {
+            <div class="flex justify-center items-center p-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <span class="sr-only">Loading...</span>
+            </div>
+        }
+        else if (_recipe == null)
+        {
+            <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">
+                            Recipe not found.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-gray-900">Recipe Details</h2>
+                        <button @onclick="@(() => _editingRecipe = !_editingRecipe)" 
+                                class="inline-flex items-center px-3 py-1 border border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded text-sm transition-colors">
+                            @(_editingRecipe ? "Cancel Edit" : "Edit Details")
+                        </button>
+                    </div>
+                    
+                    @if (_editingRecipe)
+                    {
+                        <EditForm Model="@_updateRecipe" OnValidSubmit="HandleRecipeUpdate">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="mb-4 text-red-600 text-sm" />
+                            
+                            <div class="mt-4 space-y-6 bg-slate-200 p-6 rounded-md">
+                                <div class="max-w-md">
+                                    <label for="name" class="block text-sm font-medium text-gray-800">Recipe Name</label>
+                                    <div class="mt-1">
+                                        <InputText id="name" @bind-Value="_updateRecipe.Name" maxlength="100"
+                                                 class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <ValidationMessage For="@(() => _updateRecipe.Name)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div class="max-w-xs">
+                                    <label for="servings" class="block text-sm font-medium text-gray-800">Servings</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="servings" @bind-Value="_updateRecipe.Servings" min="1" max="100"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <ValidationMessage For="@(() => _updateRecipe.Servings)" class="mt-1 text-sm text-red-600" />
+                                        <div class="text-xs text-gray-500 mt-1">Number of servings this recipe makes</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-2 flex justify-end">
+                                    <button type="submit" 
+                                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        Update Recipe
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-500">Recipe Name</span>
+                                <span class="block mt-1 text-gray-900">@_recipe.Name</span>
+                            </div>
+                            <div>
+                                <span class="block text-sm font-medium text-gray-500">Servings</span>
+                                <span class="block mt-1 text-gray-900">@_recipe.Servings</span>
+                            </div>
+                        </div>
+
+                        @if (_recipe.TotalCalories > 0)
+                        {
+                            <div class="mt-4 bg-slate-100 p-4 rounded-md">
+                                <h3 class="text-md font-medium text-gray-700 mb-2">Nutritional Information</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Calories per Serving</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.CaloriesPerServing</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Protein</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.ProteinPerServing g</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Carbohydrates</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.CarbohydratesPerServing g</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Fat</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.FatPerServing g</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Fiber</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.FiberPerServing g</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Sugars</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.SugarsPerServing g</span>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-sm text-gray-500">
+                                    <p>Values shown per serving. Total recipe contains @_recipe.TotalCalories calories.</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Ingredients</h2>
+                    
+                    @if (_loadingIngredients)
+                    {
+                        <div class="flex justify-center items-center py-6">
+                            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (_ingredients.Any())
+                        {
+                            <div class="overflow-x-auto mb-6">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gram Equivalent</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach (var ingredient in _ingredients)
+                                        {
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@ingredient.ItemName</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.Measurement</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.GramEquivalent g</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.Calories</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <button class="text-red-600 hover:text-red-900 mr-2" @onclick="() => RemoveIngredient(ingredient)">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded" role="alert">
+                                <p>No ingredients added yet. Use the form below to add ingredients to your recipe.</p>
+                            </div>
+                        }
+                        
+                        <div class="bg-gray-50 p-4 rounded-md mb-4">
+                            <h3 class="text-md font-medium text-gray-700 mb-3">Add Ingredient</h3>
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div>
+                                    <label for="itemId" class="block text-sm font-medium text-gray-700">Item</label>
+                                    <select id="itemId" @bind="_newIngredient.ItemId" 
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="0">Select an item</option>
+                                        @if (_availableItems != null)
+                                        {
+                                            @foreach (var item in _availableItems)
+                                            {
+                                                <option value="@item.Id">@item.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="measurement" class="block text-sm font-medium text-gray-700">Measurement</label>
+                                    <input type="text" id="measurement" @bind="_newIngredient.Measurement" 
+                                           placeholder="e.g., 2 cups, 1 tablespoon"
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label for="gramEquivalent" class="block text-sm font-medium text-gray-700">Gram Equivalent</label>
+                                    <input type="number" id="gramEquivalent" @bind="_newIngredient.GramEquivalent" step="0.1" min="0.1"
+                                           placeholder="Weight in grams"
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button type="button" @onclick="AddIngredient"
+                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Add Ingredient
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-gray-900">Recipe Measurements</h2>
+                        <a href="/recipes/@Id/measurements" 
+                           class="inline-flex items-center px-3 py-1 border border-purple-600 text-purple-600 bg-white hover:bg-purple-600 hover:text-white rounded text-sm transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
+                            </svg>
+                            Manage Measurements
+                        </a>
+                    </div>
+                    
+                    @if (_loadingMeasurements)
+                    {
+                        <div class="flex justify-center items-center py-6">
+                            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (_measurements.Any())
+                        {
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Servings</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach (var measurement in _measurements)
+                                        {
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@measurement.Measurement</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@measurement.Servings</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@measurement.CaloriesPerServing per serving</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded" role="alert">
+                                <p class="text-sm text-yellow-700">No alternative measurements defined. Click "Manage Measurements" to add different serving sizes.</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <a href="/recipes" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Return to Recipes
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private RecipeDto? _recipe;
+    private RecipeUpdateDto _updateRecipe = new RecipeUpdateDto();
+    private List<RecipeItemDto> _ingredients = new List<RecipeItemDto>();
+    private List<AdjustedRecipeDto> _measurements = new List<AdjustedRecipeDto>();
+    private RecipeItemCreateDto _newIngredient = new RecipeItemCreateDto();
+    private List<ItemDto>? _availableItems;
+    private bool _loading = true;
+    private bool _loadingIngredients = false;
+    private bool _loadingMeasurements = false;
+    private bool _editingRecipe = false;
+    
+    [Inject]
+    private RecipeService RecipeService { get; set; } = default!;
+    
+    [Inject]
+    private ItemService ItemService { get; set; } = default!;
+    
+    [Inject]
+    private RecipeItemService RecipeItemService { get; set; } = default!;
+    
+    [Inject]
+    private AdjustedRecipeService AdjustedRecipeService { get; set; } = default!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(
+            LoadRecipe(),
+            LoadItems()
+        );
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _recipe != null)
+        {
+            await Task.WhenAll(
+                LoadIngredients(),
+                LoadMeasurements()
+            );
+        }
+    }
+    
+    private async Task LoadItems()
+    {
+        try
+        {
+            var response = await ItemService.GetItemsAsync(1, 1000); // Get all items
+            _availableItems = response.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load items: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", "Error loading items: " + ex.Message);
+        }
+    }
+    
+    private async Task LoadRecipe()
+    {
+        _loading = true;
+        try
+        {
+            _recipe = await RecipeService.GetRecipeAsync(Id);
+            if (_recipe != null)
+            {
+                // Map to update DTO
+                _updateRecipe.Name = _recipe.Name;
+                _updateRecipe.Servings = _recipe.Servings;
+                
+                // Initialize new ingredient
+                _newIngredient.RecipeId = Id;
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", $"Recipe with ID {Id} not found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load recipe: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", "Error loading recipe: " + ex.Message);
+        }
+        _loading = false;
+    }
+    
+    private async Task LoadIngredients()
+    {
+        _loadingIngredients = true;
+        try
+        {
+            var ingredients = await RecipeService.GetRecipeItemsAsync(Id);
+            _ingredients = ingredients;
+            await JSRuntime.InvokeVoidAsync("console.log", $"Loaded {ingredients.Count} ingredients");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "Error loading ingredients: " + ex.Message);
+        }
+        _loadingIngredients = false;
+        StateHasChanged();
+    }
+    
+    private async Task LoadMeasurements()
+    {
+        _loadingMeasurements = true;
+        try
+        {
+            var measurements = await AdjustedRecipeService.GetAdjustedRecipesByRecipeIdAsync(Id);
+            _measurements = measurements;
+            await JSRuntime.InvokeVoidAsync("console.log", $"Loaded {measurements.Count} measurements");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "Error loading measurements: " + ex.Message);
+        }
+        _loadingMeasurements = false;
+        StateHasChanged();
+    }
+    
+    private async Task HandleRecipeUpdate()
+    {
+        try
+        {
+            _loading = true;
+            var success = await RecipeService.UpdateRecipeAsync(Id, _updateRecipe);
+            if (success)
+            {
+                _editingRecipe = false;
+                await LoadRecipe(); // Reload the recipe to see changes
+                await DialogService.ShowMessageBox("Success", "Recipe updated successfully.");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to update recipe.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error updating recipe: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task AddIngredient()
+    {
+        if (_newIngredient.ItemId <= 0)
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please select an item.");
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(_newIngredient.Measurement))
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please enter a measurement.");
+            return;
+        }
+        
+        if (_newIngredient.GramEquivalent <= 0)
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please enter a gram equivalent greater than zero.");
+            return;
+        }
+        
+        try
+        {
+            _loadingIngredients = true;
+            
+            // Ensure the recipe ID is set
+            _newIngredient.RecipeId = Id;
+            
+            await JSRuntime.InvokeVoidAsync("console.log", "Adding ingredient:", _newIngredient);
+            
+            var success = await RecipeItemService.CreateRecipeItemAsync(_newIngredient);
+            if (success)
+            {
+                // Reload the recipe to update nutrition info
+                await Task.WhenAll(
+                    LoadRecipe(),
+                    LoadIngredients()
+                );
+                
+                // Reset form for next ingredient
+                _newIngredient = new RecipeItemCreateDto { RecipeId = Id };
+                
+                await JSRuntime.InvokeVoidAsync("console.log", "Ingredient added successfully");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to add ingredient.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error adding ingredient: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", "Error adding ingredient: " + ex.Message);
+        }
+        _loadingIngredients = false;
+    }
+    
+    private async Task RemoveIngredient(RecipeItemDto ingredient)
+    {
+        try
+        {
+            var result = await DialogService.ShowMessageBox(
+                "Confirm Delete",
+                $"Are you sure you want to remove {ingredient.ItemName}?",
+                yesText: "Delete",
+                cancelText: "Cancel");
+
+            if (result == true)
+            {
+                _loadingIngredients = true;
+                
+                var success = await RecipeItemService.DeleteRecipeItemAsync(ingredient.Id);
+                if (success)
+                {
+                    // Reload both recipe (for nutrition) and ingredients
+                    await Task.WhenAll(
+                        LoadRecipe(),
+                        LoadIngredients()
+                    );
+                }
+                else
+                {
+                    await DialogService.ShowMessageBox("Error", "Failed to remove ingredient.");
+                }
+                
+                _loadingIngredients = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error removing ingredient: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", "Error removing ingredient: " + ex.Message);
+        }
+    }
+}

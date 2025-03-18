@@ -1,0 +1,459 @@
+@page "/recipes/create"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Create Recipe</PageTitle>
+
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-indigo-800">Create Recipe</h1>
+            <a href="/recipes" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to List
+            </a>
+        </div>
+        
+        @if (!_recipeCreated)
+        {
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Recipe Details</h2>
+                    <EditForm Model="@_recipe" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="mb-4 text-red-600 text-sm" />
+                        
+                        <div class="space-y-6 bg-slate-200 p-6 rounded-md">
+                            <div class="max-w-md">
+                                <label for="name" class="block text-sm font-medium text-gray-800">Recipe Name</label>
+                                <div class="mt-1">
+                                    <InputText id="name" @bind-Value="_recipe.Name" maxlength="100"
+                                             class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                    <ValidationMessage For="@(() => _recipe.Name)" class="mt-1 text-sm text-red-600" />
+                                </div>
+                            </div>
+                            
+                            <div class="max-w-xs">
+                                <label for="servings" class="block text-sm font-medium text-gray-800">Servings</label>
+                                <div class="mt-1">
+                                    <InputNumber id="servings" @bind-Value="_recipe.Servings" min="1" max="100"
+                                               class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                    <ValidationMessage For="@(() => _recipe.Servings)" class="mt-1 text-sm text-red-600" />
+                                    <div class="text-xs text-gray-500 mt-1">Number of servings this recipe makes</div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-5 flex justify-end">
+                                <button type="submit" 
+                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Save Recipe
+                                </button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-gray-900">Recipe Details</h2>
+                        <button @onclick="@(() => _editingRecipe = !_editingRecipe)" 
+                                class="inline-flex items-center px-3 py-1 border border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white rounded text-sm transition-colors">
+                            @(_editingRecipe ? "Cancel Edit" : "Edit Details")
+                        </button>
+                    </div>
+                    
+                    @if (_editingRecipe)
+                    {
+                        <EditForm Model="@_recipe" OnValidSubmit="UpdateRecipe">
+                            <DataAnnotationsValidator />
+                            
+                            <div class="mt-4 space-y-6 bg-slate-200 p-6 rounded-md">
+                                <div class="max-w-md">
+                                    <label for="edit-name" class="block text-sm font-medium text-gray-800">Recipe Name</label>
+                                    <div class="mt-1">
+                                        <InputText id="edit-name" @bind-Value="_recipe.Name" maxlength="100"
+                                                 class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <ValidationMessage For="@(() => _recipe.Name)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div class="max-w-xs">
+                                    <label for="edit-servings" class="block text-sm font-medium text-gray-800">Servings</label>
+                                    <div class="mt-1">
+                                        <InputNumber id="edit-servings" @bind-Value="_recipe.Servings" min="1" max="100"
+                                                   class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
+                                        <ValidationMessage For="@(() => _recipe.Servings)" class="mt-1 text-sm text-red-600" />
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-2 flex justify-end">
+                                    <button type="submit" 
+                                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        Update Recipe
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span class="block text-sm font-medium text-gray-500">Recipe Name</span>
+                                <span class="block mt-1 text-gray-900">@_recipe.Name</span>
+                            </div>
+                            <div>
+                                <span class="block text-sm font-medium text-gray-500">Servings</span>
+                                <span class="block mt-1 text-gray-900">@_recipe.Servings</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+                <div class="p-6">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Ingredients</h2>
+                    
+                    @if (_loading)
+                    {
+                        <div class="flex justify-center items-center py-6">
+                            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (_ingredients.Any())
+                        {
+                            <div class="overflow-x-auto mb-6">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gram Equivalent</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach (var ingredient in _ingredients)
+                                        {
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@ingredient.ItemName</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.Measurement</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.GramEquivalent g</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <button class="text-red-600 hover:text-red-900 mr-2" @onclick="() => RemoveIngredient(ingredient)">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded" role="alert">
+                                <p>No ingredients added yet. Use the form below to add ingredients to your recipe.</p>
+                            </div>
+                        }
+                        
+                        <div class="bg-gray-50 p-4 rounded-md mb-4">
+                            <h3 class="text-md font-medium text-gray-700 mb-3">Add Ingredient</h3>
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div>
+                                    <label for="itemId" class="block text-sm font-medium text-gray-700">Item</label>
+                                    <select id="itemId" @bind="_newIngredient.ItemId" 
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="0">Select an item</option>
+                                        @if (_availableItems != null)
+                                        {
+                                            @foreach (var item in _availableItems)
+                                            {
+                                                <option value="@item.Id">@item.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="measurement" class="block text-sm font-medium text-gray-700">Measurement</label>
+                                    <input type="text" id="measurement" @bind="_newIngredient.Measurement" 
+                                           placeholder="e.g., 2 cups, 1 tablespoon"
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label for="gramEquivalent" class="block text-sm font-medium text-gray-700">Gram Equivalent</label>
+                                    <input type="number" id="gramEquivalent" @bind="_newIngredient.GramEquivalent" step="0.1" min="0.1"
+                                           placeholder="Weight in grams"
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button type="button" @onclick="AddIngredient"
+                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Add Ingredient
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" @onclick="Cancel"
+                                    class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Cancel
+                            </button>
+                            <button type="button" @onclick="FinishRecipe"
+                                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                Finish Recipe
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private RecipeCreateDto _recipe = new RecipeCreateDto { Servings = 2 };
+    private RecipeUpdateDto _recipeUpdate = new RecipeUpdateDto();
+    private List<RecipeItemDto> _ingredients = new List<RecipeItemDto>();
+    private RecipeItemCreateDto _newIngredient = new RecipeItemCreateDto();
+    private List<ItemDto>? _availableItems;
+    private bool _loading = false;
+    private bool _recipeCreated = false;
+    private bool _editingRecipe = false;
+    private int _recipeId = 0;
+    
+    [Inject]
+    private RecipeService RecipeService { get; set; } = default!;
+    
+    [Inject]
+    private ItemService ItemService { get; set; } = default!;
+    
+    [Inject]
+    private RecipeItemService RecipeItemService { get; set; } = default!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItems();
+    }
+    
+    private async Task LoadItems()
+    {
+        _loading = true;
+        try
+        {
+            var response = await ItemService.GetItemsAsync(1, 1000); // Get all items
+            _availableItems = response.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load items: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            _loading = true;
+            var success = await RecipeService.CreateRecipeAsync(_recipe);
+            if (success)
+            {
+                // Get the created recipe ID by fetching recipes sorted by newest
+                var recipes = await RecipeService.GetRecipesAsync(1, 10);
+                var createdRecipe = recipes.Items.FirstOrDefault(r => r.Name == _recipe.Name);
+                
+                if (createdRecipe != null)
+                {
+                    _recipeId = createdRecipe.Id;
+                    _recipeCreated = true;
+                    
+                    // Pre-fill the recipe ID for new ingredients
+                    _newIngredient = new RecipeItemCreateDto { RecipeId = _recipeId };
+                    
+                    // Copy to update DTO for potential updates
+                    _recipeUpdate.Name = _recipe.Name;
+                    _recipeUpdate.Servings = _recipe.Servings;
+                    
+                    await DialogService.ShowMessageBox("Success", "Recipe details saved. Now add ingredients.");
+                }
+                else
+                {
+                    await DialogService.ShowMessageBox("Warning", "Recipe created but could not retrieve ID. Redirecting to recipes list.");
+                    NavigationManager.NavigateTo("/recipes");
+                }
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to create recipe.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error creating recipe: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task UpdateRecipe()
+    {
+        try
+        {
+            _loading = true;
+            
+            _recipeUpdate.Name = _recipe.Name;
+            _recipeUpdate.Servings = _recipe.Servings;
+            
+            var success = await RecipeService.UpdateRecipeAsync(_recipeId, _recipeUpdate);
+            if (success)
+            {
+                _editingRecipe = false;
+                await DialogService.ShowMessageBox("Success", "Recipe details updated.");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to update recipe.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error updating recipe: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private async Task AddIngredient()
+    {
+        if (_newIngredient.ItemId <= 0)
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please select an item.");
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(_newIngredient.Measurement))
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please enter a measurement.");
+            return;
+        }
+        
+        if (_newIngredient.GramEquivalent <= 0)
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please enter a gram equivalent greater than zero.");
+            return;
+        }
+        
+        try
+        {
+            _loading = true;
+            
+            // Ensure the recipe ID is set
+            _newIngredient.RecipeId = _recipeId;
+            
+            var success = await RecipeItemService.CreateRecipeItemAsync(_newIngredient);
+            if (success)
+            {
+                // Refresh the ingredients list
+                await LoadIngredients();
+                
+                // Reset for next item
+                _newIngredient = new RecipeItemCreateDto { RecipeId = _recipeId };
+                
+                await JSRuntime.InvokeVoidAsync("console.log", "Ingredient added successfully");
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to add ingredient.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error adding ingredient: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.log", "Error adding ingredient: " + ex.Message);
+        }
+        _loading = false;
+    }
+    
+    private async Task LoadIngredients()
+    {
+        if (_recipeId <= 0) return;
+        
+        _loading = true;
+        try
+        {
+            var ingredients = await RecipeService.GetRecipeItemsAsync(_recipeId);
+            _ingredients = ingredients;
+            
+            await JSRuntime.InvokeVoidAsync("console.log", $"Loaded {ingredients.Count} ingredients");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load ingredients: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.log", "Error loading ingredients: " + ex.Message);
+        }
+        _loading = false;
+    }
+    
+    private async Task RemoveIngredient(RecipeItemDto ingredient)
+    {
+        try
+        {
+            var result = await DialogService.ShowMessageBox(
+                "Confirm Delete",
+                $"Are you sure you want to remove {ingredient.ItemName}?",
+                yesText: "Delete",
+                cancelText: "Cancel");
+
+            if (result == true)
+            {
+                _loading = true;
+                var success = await RecipeItemService.DeleteRecipeItemAsync(ingredient.Id);
+                if (success)
+                {
+                    await LoadIngredients();
+                }
+                else
+                {
+                    await DialogService.ShowMessageBox("Error", "Failed to remove ingredient.");
+                }
+                _loading = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error removing ingredient: {ex.Message}");
+        }
+    }
+    
+    private void FinishRecipe()
+    {
+        if (_ingredients.Any())
+        {
+            NavigationManager.NavigateTo($"/recipes/edit/{_recipeId}");
+        }
+        else
+        {
+            DialogService.ShowMessageBox("Warning", "Please add at least one ingredient before finishing.");
+        }
+    }
+    
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/recipes");
+    }
+}
