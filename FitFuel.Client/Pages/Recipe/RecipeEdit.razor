@@ -112,23 +112,23 @@
                                     </div>
                                     <div>
                                         <span class="block text-sm font-medium text-gray-500">Protein</span>
-                                        <span class="block mt-1 text-gray-900">@_recipe.ProteinPerServing g</span>
+                                        <span class="block mt-1 text-gray-900">@Math.Round(_recipe.ProteinPerServing, 1) g</span>
                                     </div>
                                     <div>
                                         <span class="block text-sm font-medium text-gray-500">Carbohydrates</span>
-                                        <span class="block mt-1 text-gray-900">@_recipe.CarbohydratesPerServing g</span>
+                                        <span class="block mt-1 text-gray-900">@Math.Round(_recipe.CarbohydratesPerServing, 1) g</span>
                                     </div>
                                     <div>
                                         <span class="block text-sm font-medium text-gray-500">Fat</span>
-                                        <span class="block mt-1 text-gray-900">@_recipe.FatPerServing g</span>
+                                        <span class="block mt-1 text-gray-900">@Math.Round(_recipe.FatPerServing, 1) g</span>
                                     </div>
                                     <div>
                                         <span class="block text-sm font-medium text-gray-500">Fiber</span>
-                                        <span class="block mt-1 text-gray-900">@_recipe.FiberPerServing g</span>
+                                        <span class="block mt-1 text-gray-900">@Math.Round(_recipe.FiberPerServing, 1) g</span>
                                     </div>
                                     <div>
                                         <span class="block text-sm font-medium text-gray-500">Sugars</span>
-                                        <span class="block mt-1 text-gray-900">@_recipe.SugarsPerServing g</span>
+                                        <span class="block mt-1 text-gray-900">@Math.Round(_recipe.SugarsPerServing, 1) g</span>
                                     </div>
                                 </div>
                                 <div class="mt-2 text-sm text-gray-500">
@@ -152,6 +152,10 @@
                     }
                     else
                     {
+                        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded" role="alert">
+                            <p>You can add, edit, or remove ingredients. Changes to ingredients will automatically update the recipe's nutritional information.</p>
+                        </div>
+                        
                         @if (_ingredients.Any())
                         {
                             <div class="overflow-x-auto mb-6">
@@ -161,8 +165,8 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gram Equivalent</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
+                                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -172,8 +176,8 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@ingredient.ItemName</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.Measurement</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.GramEquivalent g</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.Calories</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@ingredient.Calories</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                                                     <button class="text-red-600 hover:text-red-900 mr-2" @onclick="() => RemoveIngredient(ingredient)">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -188,8 +192,8 @@
                         }
                         else
                         {
-                            <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded" role="alert">
-                                <p>No ingredients added yet. Use the form below to add ingredients to your recipe.</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 mb-4 rounded" role="alert">
+                                <p>No ingredients found. Use the form below to add ingredients to your recipe.</p>
                             </div>
                         }
                         
@@ -199,7 +203,7 @@
                                 <div>
                                     <label for="itemId" class="block text-sm font-medium text-gray-700">Item</label>
                                     <select id="itemId" @bind="_newIngredient.ItemId" 
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @(_itemIdError ? "border-red-500" : "")">
                                         <option value="0">Select an item</option>
                                         @if (_availableItems != null)
                                         {
@@ -209,18 +213,31 @@
                                             }
                                         }
                                     </select>
+                                    @if (_itemIdError)
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">Please select an item</div>
+                                    }
                                 </div>
                                 <div>
                                     <label for="measurement" class="block text-sm font-medium text-gray-700">Measurement</label>
                                     <input type="text" id="measurement" @bind="_newIngredient.Measurement" 
                                            placeholder="e.g., 2 cups, 1 tablespoon"
-                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @(_measurementError ? "border-red-500" : "")" />
+                                    @if (_measurementError)
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">Please enter a measurement</div>
+                                    }
                                 </div>
                                 <div>
                                     <label for="gramEquivalent" class="block text-sm font-medium text-gray-700">Gram Equivalent</label>
                                     <input type="number" id="gramEquivalent" @bind="_newIngredient.GramEquivalent" step="0.1" min="0.1"
                                            placeholder="Weight in grams"
-                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @(_gramEquivalentError ? "border-red-500" : "")" />
+                                    @if (_gramEquivalentError)
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">Please enter a gram equivalent greater than zero</div>
+                                    }
+                                    <div class="text-xs text-gray-500 mt-1">The weight in grams this measurement equals</div>
                                 </div>
                             </div>
                             <div class="mt-4 flex justify-end">
@@ -240,7 +257,7 @@
             <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-gray-900">Recipe Measurements</h2>
+                        <h2 class="text-lg font-bold text-gray-900">Alternative Servings</h2>
                         <a href="/recipes/@Id/measurements" 
                            class="inline-flex items-center px-3 py-1 border border-purple-600 text-purple-600 bg-white hover:bg-purple-600 hover:text-white rounded text-sm transition-colors">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -248,6 +265,10 @@
                             </svg>
                             Manage Measurements
                         </a>
+                    </div>
+                    
+                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded" role="alert">
+                        <p>Alternative servings let you define different portions or batch sizes for your recipe.</p>
                     </div>
                     
                     @if (_loadingMeasurements)
@@ -265,8 +286,8 @@
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Servings</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Servings</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -274,8 +295,8 @@
                                         {
                                             <tr>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@measurement.Measurement</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@measurement.Servings</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@measurement.CaloriesPerServing per serving</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@measurement.Servings</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@measurement.CaloriesPerServing per serving</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -285,7 +306,7 @@
                         else
                         {
                             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded" role="alert">
-                                <p class="text-sm text-yellow-700">No alternative measurements defined. Click "Manage Measurements" to add different serving sizes.</p>
+                                <p class="text-sm text-yellow-700">No alternative servings defined. Click "Manage Measurements" to add different serving sizes.</p>
                             </div>
                         }
                     }
@@ -316,6 +337,11 @@
     private bool _loadingIngredients = false;
     private bool _loadingMeasurements = false;
     private bool _editingRecipe = false;
+    
+    // Form validation for ingredients
+    private bool _itemIdError = false;
+    private bool _measurementError = false;
+    private bool _gramEquivalentError = false;
     
     [Inject]
     private RecipeService RecipeService { get; set; } = default!;
@@ -450,21 +476,34 @@
     
     private async Task AddIngredient()
     {
+        // Clear previous validation errors
+        _itemIdError = false;
+        _measurementError = false;
+        _gramEquivalentError = false;
+        
+        // Validate input
+        bool isValid = true;
+        
         if (_newIngredient.ItemId <= 0)
         {
-            await DialogService.ShowMessageBox("Validation Error", "Please select an item.");
-            return;
+            _itemIdError = true;
+            isValid = false;
         }
         
         if (string.IsNullOrWhiteSpace(_newIngredient.Measurement))
         {
-            await DialogService.ShowMessageBox("Validation Error", "Please enter a measurement.");
-            return;
+            _measurementError = true;
+            isValid = false;
         }
         
         if (_newIngredient.GramEquivalent <= 0)
         {
-            await DialogService.ShowMessageBox("Validation Error", "Please enter a gram equivalent greater than zero.");
+            _gramEquivalentError = true;
+            isValid = false;
+        }
+        
+        if (!isValid)
+        {
             return;
         }
         
@@ -504,41 +543,40 @@
         _loadingIngredients = false;
     }
     
-    private async Task RemoveIngredient(RecipeItemDto ingredient)
+private async Task RemoveIngredient(RecipeItemDto ingredient)
+{
+    try
     {
-        try
-        {
-            var result = await DialogService.ShowMessageBox(
-                "Confirm Delete",
-                $"Are you sure you want to remove {ingredient.ItemName}?",
-                yesText: "Delete",
-                cancelText: "Cancel");
+        var result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to remove {ingredient.ItemName}?",
+            yesText: "Delete",
+            cancelText: "Cancel");
 
-            if (result == true)
-            {
-                _loadingIngredients = true;
-                
-                var success = await RecipeItemService.DeleteRecipeItemAsync(ingredient.Id);
-                if (success)
-                {
-                    // Reload both recipe (for nutrition) and ingredients
-                    await Task.WhenAll(
-                        LoadRecipe(),
-                        LoadIngredients()
-                    );
-                }
-                else
-                {
-                    await DialogService.ShowMessageBox("Error", "Failed to remove ingredient.");
-                }
-                
-                _loadingIngredients = false;
-            }
-        }
-        catch (Exception ex)
+        if (result == true)
         {
-            await DialogService.ShowMessageBox("Error", $"Error removing ingredient: {ex.Message}");
-            await JSRuntime.InvokeVoidAsync("console.error", "Error removing ingredient: " + ex.Message);
+            _loadingIngredients = true;
+            
+            var success = await RecipeItemService.DeleteRecipeItemAsync(ingredient.Id);
+            if (success)
+            {
+                // Reload both recipe (for nutrition) and ingredients
+                await Task.WhenAll(
+                    LoadRecipe(),
+                    LoadIngredients()
+                );
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to remove ingredient.");
+            }
+            
+            _loadingIngredients = false;
         }
+    }
+    catch (Exception ex)
+    {
+        await DialogService.ShowMessageBox("Error", $"Error removing ingredient: {ex.Message}");
+        await JSRuntime.InvokeVoidAsync("console.error", "Error removing ingredient: " + ex.Message);
     }
 }
