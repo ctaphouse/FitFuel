@@ -75,6 +75,13 @@ namespace FitFuel.Api.Controllers
                     return BadRequest(ApiResponse<ItemTypeDto>.ErrorResponse("Invalid model state"));
                 }
 
+                // Check if an item type with the same name already exists
+                var nameExists = await _context.ItemTypes.AnyAsync(it => it.Name.ToLower() == itemTypeDto.Name.ToLower());
+                if (nameExists)
+                {
+                    return BadRequest(ApiResponse<ItemTypeDto>.ErrorResponse($"An item type with the name '{itemTypeDto.Name}' already exists"));
+                }
+
                 var itemType = _mapper.Map<ItemType>(itemTypeDto);
                 
                 _context.ItemTypes.Add(itemType);
@@ -112,6 +119,16 @@ namespace FitFuel.Api.Controllers
                 if (itemType == null)
                 {
                     return NotFound(ApiResponse<ItemTypeDto>.ErrorResponse($"ItemType with ID {id} not found"));
+                }
+
+                // Check if another item type with the same name already exists
+                var nameExists = await _context.ItemTypes.AnyAsync(it => 
+                    it.Id != id && 
+                    it.Name.ToLower() == itemTypeDto.Name.ToLower());
+                    
+                if (nameExists)
+                {
+                    return BadRequest(ApiResponse<ItemTypeDto>.ErrorResponse($"An item type with the name '{itemTypeDto.Name}' already exists"));
                 }
 
                 _mapper.Map(itemTypeDto, itemType);

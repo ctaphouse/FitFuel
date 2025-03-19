@@ -46,20 +46,52 @@ namespace FitFuel.Client.Services
             return response?.Data;
         }
 
-        public async Task<bool> CreateItemAsync(ItemCreateDto item)
+        public async Task<(bool success, string? message)> CreateItemAsync(ItemCreateDto item)
         {
             var content = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("api/Item", content);
             
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, null);
+            }
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<ItemDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to create item");
+                }
+                catch
+                {
+                    return (false, "Failed to create item. An error occurred.");
+                }
+            }
         }
 
-        public async Task<bool> UpdateItemAsync(int id, ItemUpdateDto item)
+        public async Task<(bool success, string? message)> UpdateItemAsync(int id, ItemUpdateDto item)
         {
             var content = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync($"api/Item/{id}", content);
             
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, null);
+            }
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<ItemDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to update item");
+                }
+                catch
+                {
+                    return (false, "Failed to update item. An error occurred.");
+                }
+            }
         }
 
         public async Task<bool> DeleteItemAsync(int id)

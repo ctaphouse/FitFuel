@@ -59,6 +59,22 @@
                             <DataAnnotationsValidator />
                             <ValidationSummary class="mb-4 text-red-600 text-sm" />
                             
+                            @if (!string.IsNullOrEmpty(_errorMessage))
+                            {
+                                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-red-700">@_errorMessage</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            
                             <div class="mt-4 space-y-6 bg-slate-200 p-6 rounded-md">
                                 <div class="max-w-md">
                                     <label for="name" class="block text-sm font-medium text-gray-800">Recipe Name</label>
@@ -75,7 +91,6 @@
                                         <InputNumber id="servings" @bind-Value="_updateRecipe.Servings" min="1" max="100"
                                                    class="shadow-sm focus:ring-indigo-600 focus:border-indigo-600 block w-full sm:text-sm border-gray-300 rounded-md bg-white text-gray-900" />
                                         <ValidationMessage For="@(() => _updateRecipe.Servings)" class="mt-1 text-sm text-red-600" />
-                                        <div class="text-xs text-gray-500 mt-1">Number of servings this recipe makes</div>
                                     </div>
                                 </div>
                                 
@@ -253,8 +268,6 @@
                 </div>
             </div>
 
-
-
             <div class="mt-6 flex justify-end">
                 <a href="/recipes" 
                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -277,6 +290,7 @@
     private bool _loading = true;
     private bool _loadingIngredients = false;
     private bool _editingRecipe = false;
+    private string _errorMessage = string.Empty;
     
     // Form validation for ingredients
     private bool _itemIdError = false;
@@ -313,8 +327,6 @@
         }
     }
     
-
-    
     private async Task LoadItems()
     {
         try
@@ -343,8 +355,6 @@
                 
                 // Initialize new ingredient
                 _newIngredient = new RecipeItemCreateDto { RecipeId = Id };
-                
-
             }
             else
             {
@@ -376,14 +386,15 @@
         StateHasChanged();
     }
     
-
     private async Task HandleRecipeUpdate()
     {
         try
         {
             _loading = true;
-            var success = await RecipeService.UpdateRecipeAsync(Id, _updateRecipe);
-            if (success)
+            _errorMessage = string.Empty;
+            
+            var result = await RecipeService.UpdateRecipeAsync(Id, _updateRecipe);
+            if (result.success)
             {
                 _editingRecipe = false;
                 await LoadRecipe(); // Reload the recipe to see changes
@@ -391,12 +402,15 @@
             }
             else
             {
-                await DialogService.ShowMessageBox("Error", "Failed to update recipe.");
+                // Display uniqueness error
+                _errorMessage = result.message ?? "Failed to update recipe. The recipe name may already be in use.";
+                StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessageBox("Error", $"Error updating recipe: {ex.Message}");
+            _errorMessage = $"Error updating recipe: {ex.Message}";
+            StateHasChanged();
         }
         _loading = false;
     }
@@ -507,4 +521,4 @@
             await JSRuntime.InvokeVoidAsync("console.error", "Error removing ingredient: " + ex.Message);
         }
     }
-    }
+}

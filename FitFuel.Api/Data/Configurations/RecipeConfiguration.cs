@@ -9,15 +9,18 @@ namespace FitFuel.Api.Data.Configurations
         public void Configure(EntityTypeBuilder<Recipe> builder)
         {
             builder.ToTable("Recipes");
-            
+
             builder.HasKey(r => r.Id);
-            
+
             builder.Property(r => r.Name)
                 .IsRequired()
                 .HasMaxLength(100);
-                
+
             builder.Property(r => r.Servings)
                 .IsRequired();
+
+            builder.HasIndex(r => r.Name)
+                .IsUnique();
         }
     }
 }

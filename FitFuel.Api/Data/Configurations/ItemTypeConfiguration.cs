@@ -9,12 +9,15 @@ namespace FitFuel.Api.Data.Configurations
         public void Configure(EntityTypeBuilder<ItemType> builder)
         {
             builder.ToTable("ItemTypes");
-            
+
             builder.HasKey(it => it.Id);
-            
+
             builder.Property(it => it.Name)
                 .IsRequired()
                 .HasMaxLength(50);
+
+            builder.HasIndex(it => it.Name)
+                .IsUnique();
         }
     }
 }

@@ -23,6 +23,22 @@
                     <DataAnnotationsValidator />
                     <ValidationSummary class="mb-4 text-red-600 text-sm" />
                     
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">@_errorMessage</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    
                     <div class="space-y-6 bg-slate-200 p-6 rounded-md">
                         <div class="max-w-md">
                             <label for="name" class="block text-sm font-medium text-gray-800">Name</label>
@@ -51,25 +67,31 @@
 </div>
 
 @code {
-    private ItemTypeDto _itemType = new ItemTypeDto();    
+    private ItemTypeDto _itemType = new ItemTypeDto();
+    private string _errorMessage = string.Empty;
+    
     private async Task HandleValidSubmit()
     {       
         try
         {
-            var success = await ItemTypeService.CreateItemTypeAsync(_itemType);
-            if (success)
+            _errorMessage = string.Empty;
+            var result = await ItemTypeService.CreateItemTypeAsync(_itemType);
+            if (result.success)
             {
                 await DialogService.ShowMessageBox("Success", "Item type created successfully.");
                 NavigationManager.NavigateTo("/itemtypes");
             }
             else
             {
-                await DialogService.ShowMessageBox("Error", "Failed to create item type.");
+                // Display the error message from the API response
+                _errorMessage = result.message ?? "Failed to create item type. Please check that the name is unique.";
+                StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessageBox("Error", $"Error creating item type: {ex.Message}");
+            _errorMessage = $"Error creating item type: {ex.Message}";
+            StateHasChanged();
         }
     }
     

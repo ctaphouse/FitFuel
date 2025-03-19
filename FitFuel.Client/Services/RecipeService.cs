@@ -36,20 +36,52 @@ namespace FitFuel.Client.Services
             return response?.Data;
         }
 
-        public async Task<bool> CreateRecipeAsync(RecipeCreateDto recipe)
+        public async Task<(bool success, string? message)> CreateRecipeAsync(RecipeCreateDto recipe)
         {
             var content = new StringContent(JsonSerializer.Serialize(recipe), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("api/Recipe", content);
             
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, null);
+            }
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<RecipeDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to create recipe");
+                }
+                catch
+                {
+                    return (false, "Failed to create recipe. An error occurred.");
+                }
+            }
         }
 
-        public async Task<bool> UpdateRecipeAsync(int id, RecipeUpdateDto recipe)
+        public async Task<(bool success, string? message)> UpdateRecipeAsync(int id, RecipeUpdateDto recipe)
         {
             var content = new StringContent(JsonSerializer.Serialize(recipe), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync($"api/Recipe/{id}", content);
             
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, null);
+            }
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<RecipeDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to update recipe");
+                }
+                catch
+                {
+                    return (false, "Failed to update recipe. An error occurred.");
+                }
+            }
         }
 
         public async Task<bool> DeleteRecipeAsync(int id)

@@ -158,6 +158,13 @@ namespace FitFuel.Api.Controllers
                 {
                     return BadRequest(ApiResponse<ItemDto>.ErrorResponse($"ItemType with ID {itemCreateDto.ItemTypeId} not found"));
                 }
+                
+                // Check if item with same name already exists
+                var nameExists = await _context.Items.AnyAsync(i => i.Name.ToLower() == itemCreateDto.Name.ToLower());
+                if (nameExists)
+                {
+                    return BadRequest(ApiResponse<ItemDto>.ErrorResponse($"An item with the name '{itemCreateDto.Name}' already exists"));
+                }
 
                 var item = _mapper.Map<Item>(itemCreateDto);
                 
@@ -197,6 +204,16 @@ namespace FitFuel.Api.Controllers
                 if (item == null)
                 {
                     return NotFound(ApiResponse<ItemDto>.ErrorResponse($"Item with ID {id} not found"));
+                }
+                
+                // Check if another item with the same name already exists
+                var nameExists = await _context.Items.AnyAsync(i => 
+                    i.Id != id && 
+                    i.Name.ToLower() == itemUpdateDto.Name.ToLower());
+                    
+                if (nameExists)
+                {
+                    return BadRequest(ApiResponse<ItemDto>.ErrorResponse($"An item with the name '{itemUpdateDto.Name}' already exists"));
                 }
 
                 _mapper.Map(itemUpdateDto, item);

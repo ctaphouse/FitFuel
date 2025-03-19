@@ -26,30 +26,52 @@ namespace FitFuel.Client.Services
             return response?.Data;
         }
 
-        public async Task<bool> CreateItemTypeAsync(ItemTypeDto itemType)
+        public async Task<(bool success, string? message)> CreateItemTypeAsync(ItemTypeDto itemType)
         {
             var content = new StringContent(JsonSerializer.Serialize(itemType), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("api/ItemType", content);
             
             if (response.IsSuccessStatusCode)
             {
-                return true;
+                return (true, null);
             }
-            
-            return false;
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<ItemTypeDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to create item type");
+                }
+                catch
+                {
+                    return (false, "Failed to create item type. An error occurred.");
+                }
+            }
         }
 
-        public async Task<bool> UpdateItemTypeAsync(ItemTypeDto itemType)
+        public async Task<(bool success, string? message)> UpdateItemTypeAsync(ItemTypeDto itemType)
         {
             var content = new StringContent(JsonSerializer.Serialize(itemType), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync($"api/ItemType/{itemType.Id}", content);
             
             if (response.IsSuccessStatusCode)
             {
-                return true;
+                return (true, null);
             }
-            
-            return false;
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<ItemTypeDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to update item type");
+                }
+                catch
+                {
+                    return (false, "Failed to update item type. An error occurred.");
+                }
+            }
         }
 
         public async Task<bool> DeleteItemTypeAsync(int id)

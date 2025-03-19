@@ -120,6 +120,13 @@ namespace FitFuel.Api.Controllers
                 {
                     return BadRequest(ApiResponse<RecipeDto>.ErrorResponse("Invalid model state"));
                 }
+                
+                // Check if recipe with same name already exists
+                var nameExists = await _context.Recipes.AnyAsync(r => r.Name.ToLower() == recipeCreateDto.Name.ToLower());
+                if (nameExists)
+                {
+                    return BadRequest(ApiResponse<RecipeDto>.ErrorResponse($"A recipe with the name '{recipeCreateDto.Name}' already exists"));
+                }
 
                 var recipe = _mapper.Map<Recipe>(recipeCreateDto);
                 
@@ -162,6 +169,16 @@ namespace FitFuel.Api.Controllers
                 if (recipe == null)
                 {
                     return NotFound(ApiResponse<RecipeDto>.ErrorResponse($"Recipe with ID {id} not found"));
+                }
+                
+                // Check if another recipe with the same name already exists
+                var nameExists = await _context.Recipes.AnyAsync(r => 
+                    r.Id != id && 
+                    r.Name.ToLower() == recipeUpdateDto.Name.ToLower());
+                    
+                if (nameExists)
+                {
+                    return BadRequest(ApiResponse<RecipeDto>.ErrorResponse($"A recipe with the name '{recipeUpdateDto.Name}' already exists"));
                 }
 
                 _mapper.Map(recipeUpdateDto, recipe);

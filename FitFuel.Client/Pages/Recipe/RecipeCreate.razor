@@ -29,6 +29,22 @@
                         <DataAnnotationsValidator />
                         <ValidationSummary class="mb-4 text-red-600 text-sm" />
                         
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-red-700">@_errorMessage</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
                         <div class="space-y-6 bg-slate-200 p-6 rounded-md">
                             <div class="max-w-md">
                                 <label for="name" class="block text-sm font-medium text-gray-800">Recipe Name</label>
@@ -76,6 +92,22 @@
                     {
                         <EditForm Model="@_recipe" OnValidSubmit="UpdateRecipe">
                             <DataAnnotationsValidator />
+                            
+                            @if (!string.IsNullOrEmpty(_errorMessage))
+                            {
+                                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4 mt-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-red-700">@_errorMessage</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                             
                             <div class="mt-4 space-y-6 bg-slate-200 p-6 rounded-md">
                                 <div class="max-w-md">
@@ -258,6 +290,7 @@
     private bool _recipeCreated = false;
     private bool _editingRecipe = false;
     private int _recipeId = 0;
+    private string _errorMessage = string.Empty;
     
     // Form validation for ingredients
     private bool _itemIdError = false;
@@ -298,8 +331,9 @@
         try
         {
             _loading = true;
-            var success = await RecipeService.CreateRecipeAsync(_recipe);
-            if (success)
+            _errorMessage = string.Empty;
+            var result = await RecipeService.CreateRecipeAsync(_recipe);
+            if (result.success)
             {
                 // Get the created recipe ID by fetching recipes sorted by newest
                 var recipes = await RecipeService.GetRecipesAsync(1, 10);
@@ -327,14 +361,18 @@
             }
             else
             {
-                await DialogService.ShowMessageBox("Error", "Failed to create recipe.");
+                // Display uniqueness error
+                _errorMessage = result.message ?? "Failed to create recipe. The recipe name may already be in use.";
+                _loading = false;
+                StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessageBox("Error", $"Error creating recipe: {ex.Message}");
+            _errorMessage = $"Error creating recipe: {ex.Message}";
+            _loading = false;
+            StateHasChanged();
         }
-        _loading = false;
     }
     
     private async Task UpdateRecipe()
@@ -342,24 +380,27 @@
         try
         {
             _loading = true;
+            _errorMessage = string.Empty;
             
             _recipeUpdate.Name = _recipe.Name;
             _recipeUpdate.Servings = _recipe.Servings;
             
-            var success = await RecipeService.UpdateRecipeAsync(_recipeId, _recipeUpdate);
-            if (success)
+            var result = await RecipeService.UpdateRecipeAsync(_recipeId, _recipeUpdate);
+            if (result.success)
             {
                 _editingRecipe = false;
                 await DialogService.ShowMessageBox("Success", "Recipe details updated.");
             }
             else
             {
-                await DialogService.ShowMessageBox("Error", "Failed to update recipe.");
+                _errorMessage = result.message ?? "Failed to update recipe. The recipe name may already be in use.";
+                StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            await DialogService.ShowMessageBox("Error", $"Error updating recipe: {ex.Message}");
+            _errorMessage = $"Error updating recipe: {ex.Message}";
+            StateHasChanged();
         }
         _loading = false;
     }
