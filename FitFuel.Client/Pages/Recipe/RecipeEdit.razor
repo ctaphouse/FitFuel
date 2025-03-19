@@ -111,28 +111,25 @@
                                         <span class="block mt-1 text-gray-900">@_recipe.CaloriesPerServing</span>
                                     </div>
                                     <div>
-                                        <span class="block text-sm font-medium text-gray-500">Protein</span>
+                                        <span class="block text-sm font-medium text-gray-500">Total Calories</span>
+                                        <span class="block mt-1 text-gray-900">@_recipe.TotalCalories</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-medium text-gray-500">Protein per Serving</span>
                                         <span class="block mt-1 text-gray-900">@Math.Round(_recipe.ProteinPerServing, 1) g</span>
                                     </div>
                                     <div>
-                                        <span class="block text-sm font-medium text-gray-500">Carbohydrates</span>
+                                        <span class="block text-sm font-medium text-gray-500">Carbs per Serving</span>
                                         <span class="block mt-1 text-gray-900">@Math.Round(_recipe.CarbohydratesPerServing, 1) g</span>
                                     </div>
                                     <div>
-                                        <span class="block text-sm font-medium text-gray-500">Fat</span>
+                                        <span class="block text-sm font-medium text-gray-500">Fat per Serving</span>
                                         <span class="block mt-1 text-gray-900">@Math.Round(_recipe.FatPerServing, 1) g</span>
                                     </div>
                                     <div>
-                                        <span class="block text-sm font-medium text-gray-500">Fiber</span>
+                                        <span class="block text-sm font-medium text-gray-500">Fiber per Serving</span>
                                         <span class="block mt-1 text-gray-900">@Math.Round(_recipe.FiberPerServing, 1) g</span>
                                     </div>
-                                    <div>
-                                        <span class="block text-sm font-medium text-gray-500">Sugars</span>
-                                        <span class="block mt-1 text-gray-900">@Math.Round(_recipe.SugarsPerServing, 1) g</span>
-                                    </div>
-                                </div>
-                                <div class="mt-2 text-sm text-gray-500">
-                                    <p>Values shown per serving. Total recipe contains @_recipe.TotalCalories calories.</p>
                                 </div>
                             </div>
                         }
@@ -166,6 +163,7 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gram Equivalent</th>
                                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Protein</th>
                                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -177,6 +175,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.Measurement</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@ingredient.GramEquivalent g</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@ingredient.Calories</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@Math.Round(ingredient.Protein, 1) g</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                                                     <button class="text-red-600 hover:text-red-900 mr-2" @onclick="() => RemoveIngredient(ingredient)">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -254,64 +253,7 @@
                 </div>
             </div>
 
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-gray-900">Alternative Servings</h2>
-                        <a href="/recipes/@Id/measurements" 
-                           class="inline-flex items-center px-3 py-1 border border-purple-600 text-purple-600 bg-white hover:bg-purple-600 hover:text-white rounded text-sm transition-colors">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
-                            </svg>
-                            Manage Measurements
-                        </a>
-                    </div>
-                    
-                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded" role="alert">
-                        <p>Alternative servings let you define different portions or batch sizes for your recipe.</p>
-                    </div>
-                    
-                    @if (_loadingMeasurements)
-                    {
-                        <div class="flex justify-center items-center py-6">
-                            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                        </div>
-                    }
-                    else
-                    {
-                        @if (_measurements.Any())
-                        {
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
-                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Servings</th>
-                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Calories</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @foreach (var measurement in _measurements)
-                                        {
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@measurement.Measurement</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@measurement.Servings</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">@measurement.CaloriesPerServing per serving</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded" role="alert">
-                                <p class="text-sm text-yellow-700">No alternative servings defined. Click "Manage Measurements" to add different serving sizes.</p>
-                            </div>
-                        }
-                    }
-                </div>
-            </div>
+
 
             <div class="mt-6 flex justify-end">
                 <a href="/recipes" 
@@ -330,12 +272,10 @@
     private RecipeDto? _recipe;
     private RecipeUpdateDto _updateRecipe = new RecipeUpdateDto();
     private List<RecipeItemDto> _ingredients = new List<RecipeItemDto>();
-    private List<AdjustedRecipeDto> _measurements = new List<AdjustedRecipeDto>();
     private RecipeItemCreateDto _newIngredient = new RecipeItemCreateDto();
     private List<ItemDto>? _availableItems;
     private bool _loading = true;
     private bool _loadingIngredients = false;
-    private bool _loadingMeasurements = false;
     private bool _editingRecipe = false;
     
     // Form validation for ingredients
@@ -357,22 +297,23 @@
     
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(
-            LoadRecipe(),
-            LoadItems()
-        );
-    }
-    
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && _recipe != null)
-        {
+        try {
             await Task.WhenAll(
-                LoadIngredients(),
-                LoadMeasurements()
+                LoadRecipe(),
+                LoadItems()
             );
+            
+            if (_recipe != null) {
+                await LoadIngredients();
+            }
+        }
+        catch (Exception ex) {
+            await DialogService.ShowMessageBox("Error", $"Failed to initialize page: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", "Initialization error: " + ex.Message);
         }
     }
+    
+
     
     private async Task LoadItems()
     {
@@ -401,7 +342,9 @@
                 _updateRecipe.Servings = _recipe.Servings;
                 
                 // Initialize new ingredient
-                _newIngredient.RecipeId = Id;
+                _newIngredient = new RecipeItemCreateDto { RecipeId = Id };
+                
+
             }
             else
             {
@@ -433,23 +376,7 @@
         StateHasChanged();
     }
     
-    private async Task LoadMeasurements()
-    {
-        _loadingMeasurements = true;
-        try
-        {
-            var measurements = await AdjustedRecipeService.GetAdjustedRecipesByRecipeIdAsync(Id);
-            _measurements = measurements;
-            await JSRuntime.InvokeVoidAsync("console.log", $"Loaded {measurements.Count} measurements");
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "Error loading measurements: " + ex.Message);
-        }
-        _loadingMeasurements = false;
-        StateHasChanged();
-    }
-    
+
     private async Task HandleRecipeUpdate()
     {
         try
@@ -543,40 +470,41 @@
         _loadingIngredients = false;
     }
     
-private async Task RemoveIngredient(RecipeItemDto ingredient)
-{
-    try
+    private async Task RemoveIngredient(RecipeItemDto ingredient)
     {
-        var result = await DialogService.ShowMessageBox(
-            "Confirm Delete",
-            $"Are you sure you want to remove {ingredient.ItemName}?",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (result == true)
+        try
         {
-            _loadingIngredients = true;
-            
-            var success = await RecipeItemService.DeleteRecipeItemAsync(ingredient.Id);
-            if (success)
+            var result = await DialogService.ShowMessageBox(
+                "Confirm Delete",
+                $"Are you sure you want to remove {ingredient.ItemName}?",
+                yesText: "Delete",
+                cancelText: "Cancel");
+
+            if (result == true)
             {
-                // Reload both recipe (for nutrition) and ingredients
-                await Task.WhenAll(
-                    LoadRecipe(),
-                    LoadIngredients()
-                );
+                _loadingIngredients = true;
+                
+                var success = await RecipeItemService.DeleteRecipeItemAsync(ingredient.Id);
+                if (success)
+                {
+                    // Reload both recipe (for nutrition) and ingredients
+                    await Task.WhenAll(
+                        LoadRecipe(),
+                        LoadIngredients()
+                    );
+                }
+                else
+                {
+                    await DialogService.ShowMessageBox("Error", "Failed to remove ingredient.");
+                }
+                
+                _loadingIngredients = false;
             }
-            else
-            {
-                await DialogService.ShowMessageBox("Error", "Failed to remove ingredient.");
-            }
-            
-            _loadingIngredients = false;
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error removing ingredient: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", "Error removing ingredient: " + ex.Message);
         }
     }
-    catch (Exception ex)
-    {
-        await DialogService.ShowMessageBox("Error", $"Error removing ingredient: {ex.Message}");
-        await JSRuntime.InvokeVoidAsync("console.error", "Error removing ingredient: " + ex.Message);
     }
-}
