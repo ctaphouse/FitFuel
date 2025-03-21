@@ -35,9 +35,9 @@ namespace FitFuel.Api.Controllers
                 var groceryLists = await _context.GroceryLists
                     .OrderByDescending(gl => gl.CreatedDate)
                     .ToListAsync();
-                
+
                 var groceryListDtos = new List<GroceryListDto>();
-                
+
                 foreach (var groceryList in groceryLists)
                 {
                     var groceryListDto = new GroceryListDto
@@ -47,10 +47,10 @@ namespace FitFuel.Api.Controllers
                         CreatedDate = groceryList.CreatedDate,
                         Items = await GetGroceryListItemsDto(groceryList.Id)
                     };
-                    
+
                     groceryListDtos.Add(groceryListDto);
                 }
-                
+
                 return Ok(ApiResponse<IEnumerable<GroceryListDto>>.SuccessResponse(groceryListDtos));
             }
             catch (Exception ex)
@@ -80,7 +80,7 @@ namespace FitFuel.Api.Controllers
                     CreatedDate = groceryList.CreatedDate,
                     Items = await GetGroceryListItemsDto(groceryList.Id)
                 };
-                
+
                 return Ok(ApiResponse<GroceryListDto>.SuccessResponse(groceryListDto));
             }
             catch (Exception ex)
@@ -107,22 +107,22 @@ namespace FitFuel.Api.Controllers
                     Name = groceryListCreateDto.Name,
                     CreatedDate = DateTime.UtcNow
                 };
-                
+
                 _context.GroceryLists.Add(groceryList);
                 await _context.SaveChangesAsync();
-                
+
                 // Add items from selected recipes
                 if (groceryListCreateDto.RecipeIds.Any())
                 {
                     await AddRecipeItemsToGroceryList(groceryList.Id, groceryListCreateDto.RecipeIds);
                 }
-                
+
                 // Add individual items
                 if (groceryListCreateDto.IndividualItems.Any())
                 {
                     await AddIndividualItemsToGroceryList(groceryList.Id, groceryListCreateDto.IndividualItems);
                 }
-                
+
                 // Fetch the complete grocery list with items
                 var groceryListDto = new GroceryListDto
                 {
@@ -132,13 +132,71 @@ namespace FitFuel.Api.Controllers
                     Items = await GetGroceryListItemsDto(groceryList.Id)
                 };
 
-                return CreatedAtAction(nameof(GetGroceryList), new { id = groceryList.Id }, 
+                return CreatedAtAction(nameof(GetGroceryList), new { id = groceryList.Id },
                     ApiResponse<GroceryListDto>.SuccessResponse(groceryListDto, "Grocery list created successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating grocery list");
                 return StatusCode(500, ApiResponse<GroceryListDto>.ErrorResponse("An error occurred while creating the grocery list."));
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse<GroceryListDto>>> UpdateGroceryList(int id, GroceryListCreateDto groceryListUpdateDto)
+        {
+            try
+            {
+                var groceryList = await _context.GroceryLists.FindAsync(id);
+                if (groceryList == null)
+                {
+                    return NotFound(ApiResponse<GroceryListDto>.ErrorResponse($"Grocery list with ID {id} not found"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<GroceryListDto>.ErrorResponse("Invalid model state"));
+                }
+
+                // Update the grocery list name
+                groceryList.Name = groceryListUpdateDto.Name;
+                await _context.SaveChangesAsync();
+
+                // Delete existing items
+                var existingItems = await _context.GroceryListItems
+                    .Where(gli => gli.GroceryListId == id)
+                    .ToListAsync();
+
+                _context.GroceryListItems.RemoveRange(existingItems);
+                await _context.SaveChangesAsync();
+
+                // Add items from selected recipes
+                if (groceryListUpdateDto.RecipeIds.Any())
+                {
+                    await AddRecipeItemsToGroceryList(id, groceryListUpdateDto.RecipeIds);
+                }
+
+                // Add individual items
+                if (groceryListUpdateDto.IndividualItems.Any())
+                {
+                    await AddIndividualItemsToGroceryList(id, groceryListUpdateDto.IndividualItems);
+                }
+
+                // Fetch the updated grocery list with items
+                var groceryListDto = new GroceryListDto
+                {
+                    Id = groceryList.Id,
+                    Name = groceryList.Name,
+                    CreatedDate = groceryList.CreatedDate,
+                    Items = await GetGroceryListItemsDto(groceryList.Id)
+                };
+
+                return Ok(ApiResponse<GroceryListDto>.SuccessResponse(groceryListDto, "Grocery list updated successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating grocery list {GroceryListId}", id);
+                return StatusCode(500, ApiResponse<GroceryListDto>.ErrorResponse("An error occurred while updating the grocery list."));
             }
         }
 
@@ -157,10 +215,10 @@ namespace FitFuel.Api.Controllers
                 // Delete associated items first (should cascade but being explicit)
                 var groceryListItems = await _context.GroceryListItems.Where(gli => gli.GroceryListId == id).ToListAsync();
                 _context.GroceryListItems.RemoveRange(groceryListItems);
-                
+
                 // Then delete the list
                 _context.GroceryLists.Remove(groceryList);
-                
+
                 await _context.SaveChangesAsync();
 
                 return Ok(ApiResponse<bool>.SuccessResponse(true, "Grocery list deleted successfully"));
@@ -171,7 +229,7 @@ namespace FitFuel.Api.Controllers
                 return StatusCode(500, ApiResponse<bool>.ErrorResponse("An error occurred while deleting the grocery list."));
             }
         }
-        
+
         // PATCH: api/GroceryList/5/items/6/check
         [HttpPatch("{listId}/items/{itemId}/check")]
         public async Task<ActionResult<ApiResponse<bool>>> ToggleGroceryListItem(int listId, int itemId)
@@ -180,17 +238,17 @@ namespace FitFuel.Api.Controllers
             {
                 var groceryListItem = await _context.GroceryListItems
                     .FirstOrDefaultAsync(gli => gli.GroceryListId == listId && gli.Id == itemId);
-                    
+
                 if (groceryListItem == null)
                 {
                     return NotFound(ApiResponse<bool>.ErrorResponse($"Grocery list item with ID {itemId} not found in list {listId}"));
                 }
-                
+
                 // Toggle the checked state
                 groceryListItem.IsChecked = !groceryListItem.IsChecked;
-                
+
                 await _context.SaveChangesAsync();
-                
+
                 return Ok(ApiResponse<bool>.SuccessResponse(true, "Grocery list item updated successfully"));
             }
             catch (Exception ex)
@@ -199,7 +257,7 @@ namespace FitFuel.Api.Controllers
                 return StatusCode(500, ApiResponse<bool>.ErrorResponse("An error occurred while updating the grocery list item."));
             }
         }
-        
+
         // Helper methods
         private async Task<List<GroceryListItemDto>> GetGroceryListItemsDto(int groceryListId)
         {
@@ -208,9 +266,9 @@ namespace FitFuel.Api.Controllers
                     .ThenInclude(i => i.ItemType)
                 .Where(gli => gli.GroceryListId == groceryListId)
                 .ToListAsync();
-                
+
             var groceryListItemDtos = new List<GroceryListItemDto>();
-            
+
             foreach (var item in groceryListItems)
             {
                 var groceryListItemDto = new GroceryListItemDto
@@ -225,7 +283,7 @@ namespace FitFuel.Api.Controllers
                     Source = item.Source,
                     SourceId = item.SourceId
                 };
-                
+
                 // Get source name if it's a recipe
                 if (item.Source == "Recipe" && item.SourceId.HasValue)
                 {
@@ -235,17 +293,17 @@ namespace FitFuel.Api.Controllers
                         groceryListItemDto.SourceName = recipe.Name;
                     }
                 }
-                
+
                 groceryListItemDtos.Add(groceryListItemDto);
             }
-            
+
             // Sort by item type, then by item name
             return groceryListItemDtos
                 .OrderBy(i => i.ItemTypeName)
                 .ThenBy(i => i.ItemName)
                 .ToList();
         }
-        
+
         private async Task AddRecipeItemsToGroceryList(int groceryListId, List<int> recipeIds)
         {
             // Get all recipe items for the selected recipes
@@ -253,7 +311,7 @@ namespace FitFuel.Api.Controllers
                 .Include(ri => ri.Item)
                 .Where(ri => recipeIds.Contains(ri.RecipeId))
                 .ToListAsync();
-                
+
             // Group by item to combine quantities
             var groupedItems = recipeItems
                 .GroupBy(ri => ri.ItemId)
@@ -264,7 +322,7 @@ namespace FitFuel.Api.Controllers
                     RecipeIds = g.Select(ri => ri.RecipeId).Distinct().ToList()
                 })
                 .ToList();
-                
+
             // Add each item to the grocery list
             foreach (var groupedItem in groupedItems)
             {
@@ -279,13 +337,13 @@ namespace FitFuel.Api.Controllers
                     Source = "Recipe",
                     SourceId = groupedItem.RecipeIds.First() // Just use the first recipe as the source
                 };
-                
+
                 _context.GroceryListItems.Add(groceryListItem);
             }
-            
+
             await _context.SaveChangesAsync();
         }
-        
+
         private async Task AddIndividualItemsToGroceryList(int groceryListId, List<IndividualItemDto> individualItems)
         {
             foreach (var individualItem in individualItems)
@@ -299,10 +357,10 @@ namespace FitFuel.Api.Controllers
                     IsChecked = false,
                     Source = "Individual"
                 };
-                
+
                 _context.GroceryListItems.Add(groceryListItem);
             }
-            
+
             await _context.SaveChangesAsync();
         }
     }

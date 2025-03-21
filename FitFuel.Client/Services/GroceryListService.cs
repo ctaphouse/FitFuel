@@ -31,7 +31,7 @@ namespace FitFuel.Client.Services
         {
             var content = new StringContent(JsonSerializer.Serialize(groceryList), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("api/GroceryList", content);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var createdResponse = await response.Content.ReadFromJsonAsync<ApiResponse<GroceryListDto>>();
@@ -61,11 +61,35 @@ namespace FitFuel.Client.Services
             var response = await _httpClient.DeleteAsync($"api/GroceryList/{id}");
             return response.IsSuccessStatusCode;
         }
-        
+
         public async Task<bool> ToggleGroceryListItemAsync(int listId, int itemId)
         {
             var response = await _httpClient.PatchAsync($"api/GroceryList/{listId}/items/{itemId}/check", null);
             return response.IsSuccessStatusCode;
+        }
+
+        public async Task<(bool success, string? message)> UpdateGroceryListAsync(int id, GroceryListCreateDto groceryList)
+        {
+            var content = new StringContent(JsonSerializer.Serialize(groceryList), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync($"api/GroceryList/{id}", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, null);
+            }
+            else
+            {
+                // Try to extract the error message from the response
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<GroceryListDto>>();
+                    return (false, errorResponse?.Message ?? "Failed to update grocery list");
+                }
+                catch
+                {
+                    return (false, "Failed to update grocery list. An error occurred.");
+                }
+            }
         }
     }
 }
