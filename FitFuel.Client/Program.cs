@@ -17,6 +17,7 @@ builder.Services.AddScoped<AdjustedItemService>();
 builder.Services.AddScoped<RecipeService>();
 builder.Services.AddScoped<RecipeItemService>();
 builder.Services.AddScoped<AdjustedRecipeService>();
+builder.Services.AddScoped<GroceryListService>(); 
 builder.Services.AddScoped<IDialogService, DialogService>();
 
 builder.Services.AddSingleton<AppState>();

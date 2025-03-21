@@ -1,0 +1,163 @@
+@page "/grocerylists"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject GroceryListService GroceryListService
+
+<PageTitle>Grocery Lists</PageTitle>
+
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Grocery Lists</h1>
+    
+    <div class="mb-6">
+        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded flex items-center" @onclick="CreateNew">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Create New Grocery List
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+    }
+    else if (_groceryLists == null || !_groceryLists.Any())
+    {
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded" role="alert">
+            <p>No grocery lists found. Click the button above to create one.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var list in _groceryLists)
+            {
+                <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                    <div class="p-5 flex flex-col h-full">
+                        <div class="flex justify-between items-start">
+                            <h2 class="text-xl font-semibold text-gray-800 mb-2">@list.Name</h2>
+                            <div class="flex">
+                                <button class="text-red-600 hover:text-red-800" @onclick="() => ConfirmDelete(list)">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="text-sm text-gray-600 mb-3">
+                            Created: @list.CreatedDate.ToString("MMM dd, yyyy")
+                        </div>
+                        
+                        <div class="flex-grow space-y-2">
+                            <div class="text-sm text-gray-700">
+                                <span class="font-medium">@list.Items.Count</span> items on list
+                            </div>
+                            
+                            @if (list.Items.Any())
+                            {
+                                <div class="text-sm text-gray-700">
+                                    <span class="font-medium">@list.Items.Count(i => i.IsChecked)</span> items checked off
+                                </div>
+                                
+                                <div class="mt-2 space-y-1">
+                                    <div class="text-xs text-gray-500 font-medium">Item Categories:</div>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var category in list.Items.Select(i => i.ItemTypeName).Distinct().Take(3))
+                                        {
+                                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">@category</span>
+                                        }
+                                        @if (list.Items.Select(i => i.ItemTypeName).Distinct().Count() > 3)
+                                        {
+                                            <span class="text-xs text-gray-500">+@(list.Items.Select(i => i.ItemTypeName).Distinct().Count() - 3) more</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button @onclick="() => ViewList(list.Id)" 
+                                    class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">
+                                View List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<GroceryListDto>? _groceryLists;
+    private bool _loading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroceryLists();
+    }
+    
+    private async Task LoadGroceryLists()
+    {
+        _loading = true;
+        try
+        {
+            _groceryLists = await GroceryListService.GetGroceryListsAsync();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load grocery lists: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private void CreateNew()
+    {
+        NavigationManager.NavigateTo("/grocerylists/create");
+    }
+    
+    private void ViewList(int id)
+    {
+        NavigationManager.NavigateTo($"/grocerylists/{id}");
+    }
+    
+    private async Task ConfirmDelete(GroceryListDto groceryList)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete the grocery list '{groceryList.Name}'?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await DeleteGroceryList(groceryList.Id);
+        }
+    }
+    
+    private async Task DeleteGroceryList(int id)
+    {
+        try
+        {
+            var success = await GroceryListService.DeleteGroceryListAsync(id);
+            if (success)
+            {
+                await DialogService.ShowMessageBox("Success", "Grocery list deleted successfully.");
+                await LoadGroceryLists();
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", "Failed to delete grocery list.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error deleting grocery list: {ex.Message}");
+        }
+    }
+}

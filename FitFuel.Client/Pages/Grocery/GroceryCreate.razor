@@ -1,0 +1,424 @@
+@page "/grocerylists/create"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@using System.Collections.Generic
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject GroceryListService GroceryListService
+@inject RecipeService RecipeService
+@inject ItemService ItemService
+
+<PageTitle>Create Grocery List</PageTitle>
+
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-indigo-800">Create Grocery List</h1>
+            <a href="/grocerylists" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Back to Lists
+            </a>
+        </div>
+        
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Grocery List Details</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">List Name</label>
+                        <input type="text" id="name" @bind="_groceryList.Name"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        @if (!string.IsNullOrEmpty(_nameError))
+                        {
+                            <div class="mt-1 text-sm text-red-600">@_nameError</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        @if (_loading)
+        {
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6 flex justify-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Select Recipes</h2>
+                    <p class="text-sm text-gray-500 mb-4">
+                        Choose recipes that you want to include in your grocery list.
+                        All ingredients from selected recipes will be combined into a single list.
+                    </p>
+                    
+                    @if (_recipes == null || !_recipes.Any())
+                    {
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded" role="alert">
+                            <p>No recipes available. Please create some recipes first.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="overflow-y-auto max-h-60 border border-gray-200 rounded-md mb-4">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipe</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Servings</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach (var recipe in _recipes)
+                                    {
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="checkbox" 
+                                                       checked="@_selectedRecipeIds.Contains(recipe.Id)"
+                                                       @onchange="@(e => ToggleRecipeSelection(recipe.Id, e.Value))" 
+                                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@recipe.Name</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@recipe.Servings</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-medium text-gray-900">Add Individual Items</h2>
+                        <button @onclick="AddIndividualItem" 
+                                class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Item
+                        </button>
+                    </div>
+                    
+                    <p class="text-sm text-gray-500 mb-4">
+                        Add individual items that are not part of any recipe to your grocery list.
+                    </p>
+                    
+                    @if (!_individualItems.Any())
+                    {
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded" role="alert">
+                            <p>No individual items added. Click "Add Item" to add items.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="overflow-y-auto max-h-60 border border-gray-200 rounded-md mb-4">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @for (int i = 0; i < _individualItems.Count; i++)
+                                    {
+                                        int index = i;
+                                        IndividualItemDto item = _individualItems[i];
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                @GetItemNameById(item.ItemId)
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Quantity</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Measurement</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <button @onclick="() => RemoveIndividualItem(index)" class="text-red-600 hover:text-red-900">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+                <button @onclick="Cancel" 
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Cancel
+                </button>
+                <button @onclick="CreateGroceryList" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Create List
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Individual Item Dialog -->
+@if (_showItemDialog)
+{
+    <div class="fixed inset-0 z-10 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @onclick="CloseItemDialog" aria-hidden="true"></div>
+
+            <!-- This element centers the modal contents -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Add Individual Item
+                            </h3>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <label for="itemId" class="block text-sm font-medium text-gray-700">Item</label>
+                                    <select id="itemId" @bind="_newItem.ItemId" 
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <option value="0">Select an item</option>
+                                        @if (_items != null)
+                                        {
+                                            @foreach (var item in _items.OrderBy(i => i.Name))
+                                            {
+                                                <option value="@item.Id">@item.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                    @if (_newItemErrors.ContainsKey("ItemId"))
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">@_newItemErrors["ItemId"]</div>
+                                    }
+                                </div>
+                                
+                                <div>
+                                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                                    <input type="number" id="quantity" @bind="_newItem.Quantity" step="0.1" min="0.1"
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                    @if (_newItemErrors.ContainsKey("Quantity"))
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">@_newItemErrors["Quantity"]</div>
+                                    }
+                                </div>
+                                
+                                <div>
+                                    <label for="measurement" class="block text-sm font-medium text-gray-700">Measurement</label>
+                                    <input type="text" id="measurement" @bind="_newItem.Measurement"
+                                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                    @if (_newItemErrors.ContainsKey("Measurement"))
+                                    {
+                                        <div class="mt-1 text-sm text-red-600">@_newItemErrors["Measurement"]</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @onclick="SaveIndividualItem"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Add
+                    </button>
+                    <button type="button" @onclick="CloseItemDialog"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private GroceryListCreateDto _groceryList = new GroceryListCreateDto { Name = $"Grocery List {DateTime.Now:MMM d, yyyy}" };
+    private List<RecipeDto>? _recipes;
+    private List<ItemDto>? _items;
+    private List<int> _selectedRecipeIds = new List<int>();
+    private List<IndividualItemDto> _individualItems = new List<IndividualItemDto>();
+    private IndividualItemDto _newItem = new IndividualItemDto();
+    private Dictionary<string, string> _newItemErrors = new Dictionary<string, string>();
+    private bool _loading = true;
+    private bool _showItemDialog = false;
+    private string _nameError = string.Empty;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+    
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var recipeTask = RecipeService.GetRecipesAsync(1, 100, ""); // Get up to 100 recipes
+            var itemTask = ItemService.GetItemsAsync(1, 1000); // Get up to 1000 items
+            
+            await Task.WhenAll(recipeTask, itemTask);
+            
+            _recipes = recipeTask.Result.Items.ToList();
+            _items = itemTask.Result.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load data: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private void ToggleRecipeSelection(int recipeId, object? isChecked)
+    {
+        if (isChecked is bool checked)
+        {
+            if (checked)
+            {
+                if (!_selectedRecipeIds.Contains(recipeId))
+                {
+                    _selectedRecipeIds.Add(recipeId);
+                }
+            }
+            else
+            {
+                _selectedRecipeIds.Remove(recipeId);
+            }
+        }
+    }
+    
+    private void AddIndividualItem()
+    {
+        _newItem = new IndividualItemDto();
+        _newItemErrors.Clear();
+        _showItemDialog = true;
+    }
+    
+    private void RemoveIndividualItem(int index)
+    {
+        if (index >= 0 && index < _individualItems.Count)
+        {
+            _individualItems.RemoveAt(index);
+        }
+    }
+    
+    private void SaveIndividualItem()
+    {
+        _newItemErrors.Clear();
+        bool isValid = true;
+        
+        if (_newItem.ItemId <= 0)
+        {
+            _newItemErrors["ItemId"] = "Please select an item";
+            isValid = false;
+        }
+        
+        if (_newItem.Quantity <= 0)
+        {
+            _newItemErrors["Quantity"] = "Quantity must be greater than 0";
+            isValid = false;
+        }
+        
+        if (string.IsNullOrWhiteSpace(_newItem.Measurement))
+        {
+            _newItemErrors["Measurement"] = "Please enter a measurement";
+            isValid = false;
+        }
+        
+        if (isValid)
+        {
+            _individualItems.Add(new IndividualItemDto
+            {
+                ItemId = _newItem.ItemId,
+                Quantity = _newItem.Quantity,
+                Measurement = _newItem.Measurement
+            });
+            
+            _showItemDialog = false;
+        }
+    }
+    
+    private void CloseItemDialog()
+    {
+        _showItemDialog = false;
+    }
+    
+    private string? GetItemNameById(int itemId)
+    {
+        return _items?.FirstOrDefault(i => i.Id == itemId)?.Name ?? "-";
+    }
+    
+    private async Task CreateGroceryList()
+    {
+        // Validate form
+        _nameError = string.Empty;
+        bool isValid = true;
+        
+        if (string.IsNullOrWhiteSpace(_groceryList.Name))
+        {
+            _nameError = "Please enter a name for your grocery list";
+            isValid = false;
+        }
+        
+        if (!_selectedRecipeIds.Any() && !_individualItems.Any())
+        {
+            await DialogService.ShowMessageBox("Validation Error", "Please select at least one recipe or add individual items to create a grocery list.");
+            isValid = false;
+        }
+        
+        if (!isValid)
+        {
+            return;
+        }
+        
+        try
+        {
+            // Populate the grocery list with selected recipes and individual items
+            _groceryList.RecipeIds = _selectedRecipeIds;
+            _groceryList.IndividualItems = _individualItems;
+            
+            var result = await GroceryListService.CreateGroceryListAsync(_groceryList);
+            
+            if (result.success)
+            {
+                await DialogService.ShowMessageBox("Success", "Grocery list created successfully.");
+                
+                if (result.id.HasValue)
+                {
+                    NavigationManager.NavigateTo($"/grocerylists/{result.id.Value}");
+                }
+                else
+                {
+                    NavigationManager.NavigateTo("/grocerylists");
+                }
+            }
+            else
+            {
+                await DialogService.ShowMessageBox("Error", result.message ?? "Failed to create grocery list.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Error creating grocery list: {ex.Message}");
+        }
+    }
+    
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/grocerylists");
+    }
+}

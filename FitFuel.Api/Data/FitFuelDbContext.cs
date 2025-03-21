@@ -1,3 +1,5 @@
+// Add to FitFuel.Api/Data/FitFuelDbContext.cs
+
 using Microsoft.EntityFrameworkCore;
 using FitFuel.Api.Models;
 using FitFuel.Api.Data.Configurations;
@@ -18,6 +20,10 @@ namespace FitFuel.Api.Data
         public DbSet<RecipeItem> RecipeItems { get; set; } = null!;
         public DbSet<AdjustedItem> AdjustedItems { get; set; } = null!;
         public DbSet<AdjustedRecipe> AdjustedRecipes { get; set; } = null!;
+        
+        // Add grocery list entities
+        public DbSet<GroceryList> GroceryLists { get; set; } = null!;
+        public DbSet<GroceryListItem> GroceryListItems { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,6 +36,10 @@ namespace FitFuel.Api.Data
             modelBuilder.ApplyConfiguration(new RecipeItemConfiguration());
             modelBuilder.ApplyConfiguration(new AdjustedItemConfiguration());
             modelBuilder.ApplyConfiguration(new AdjustedRecipeConfiguration());
+            
+            // Apply grocery list configurations
+            modelBuilder.ApplyConfiguration(new GroceryListConfiguration());
+            modelBuilder.ApplyConfiguration(new GroceryListItemConfiguration());
         }
     }
 }

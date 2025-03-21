@@ -1,3 +1,5 @@
+// Add to FitFuel.Api/Profiles/MappingProfile.cs
+
 using AutoMapper;
 using FitFuel.Api.Models;
 using FitFuel.Shared.Dtos;
@@ -58,6 +60,12 @@ namespace FitFuel.Api.Profiles
                 .ForMember(dest => dest.FatPerServing, opt => opt.Ignore());
             CreateMap<AdjustedRecipeCreateDto, AdjustedRecipe>();
             CreateMap<AdjustedRecipeUpdateDto, AdjustedRecipe>();
+            
+            // GroceryList mappings
+            CreateMap<GroceryList, GroceryListDto>()
+                .ForMember(dest => dest.Items, opt => opt.Ignore()); // Items need to be loaded separately
+            
+            // Other mappings for GroceryListItem if needed - we're handling these manually in the controller
         }
     }
 }
