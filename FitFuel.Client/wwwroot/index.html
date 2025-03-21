@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -8,6 +9,7 @@
     <link href="css/site.css" rel="stylesheet" /> <!-- This is your compiled Tailwind CSS -->
     <link href="FitFuel.Client.styles.css" rel="stylesheet" />
 </head>
+
 <body>
     <div id="app">Loading...</div>
 
@@ -17,5 +19,88 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    // Add this script to the end of the body in wwwroot/index.html
+
+    <script>
+        window.registerPrintFunction = function () {
+            window.printGroceryList = function () {
+                const printContent = document.getElementById('printable-content');
+
+                if (!printContent) {
+                    console.error('Printable content not found');
+                    return;
+                }
+
+                // Create a new window for printing
+                const printWindow = window.open('', '_blank');
+
+                if (!printWindow) {
+                    alert('Please allow pop-ups to print the grocery list');
+                    return;
+                }
+
+                // Add styles and content to the new window
+                printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Grocery List</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            padding: 20px;
+                        }
+                        h1 {
+                            margin-bottom: 10px;
+                        }
+                        h2 {
+                            margin-top: 20px;
+                            margin-bottom: 10px;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 5px;
+                        }
+                        ul {
+                            list-style-type: none;
+                            padding-left: 0;
+                        }
+                        li {
+                            padding: 5px 0;
+                        }
+                        .hidden {
+                            display: block;
+                        }
+                        @media print {
+                            @page {
+                                margin: 0.5cm;
+                            }
+                            body {
+                                padding: 0;
+                            }
+                            .checkbox {
+                                margin-right: 10px;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent.innerHTML}
+                </body>
+                </html>
+            `);
+
+                printWindow.document.close();
+
+                // Allow a moment for the content to load before printing
+                setTimeout(function () {
+                    printWindow.print();
+
+                    // Close the window after printing (some browsers might block this)
+                    printWindow.close();
+                }, 500);
+            };
+        };
+    </script>
 </body>
+
 </html>

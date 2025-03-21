@@ -284,25 +284,26 @@
     }
     
     private void ToggleRecipeSelection(int recipeId, object? isChecked)
+{
+    if (isChecked is bool checkedValue)
     {
-        if (isChecked is bool checked)
+        if (checkedValue)
         {
-            if (checked)
+            if (!_selectedRecipeIds.Contains(recipeId))
             {
-                if (!_selectedRecipeIds.Contains(recipeId))
-                {
-                    _selectedRecipeIds.Add(recipeId);
-                }
-            }
-            else
-            {
-                _selectedRecipeIds.Remove(recipeId);
+                _selectedRecipeIds.Add(recipeId);
             }
         }
+        else
+        {
+            _selectedRecipeIds.Remove(recipeId);
+        }
     }
+}
     
     private void AddIndividualItem()
     {
+        // Reset the form and errors
         _newItem = new IndividualItemDto();
         _newItemErrors.Clear();
         _showItemDialog = true;
@@ -357,9 +358,12 @@
         _showItemDialog = false;
     }
     
-    private string? GetItemNameById(int itemId)
+    private string GetItemNameById(int itemId)
     {
-        return _items?.FirstOrDefault(i => i.Id == itemId)?.Name ?? "-";
+        if (_items == null)
+            return "Unknown Item";
+            
+        return _items.FirstOrDefault(i => i.Id == itemId)?.Name ?? "Unknown Item";
     }
     
     private async Task CreateGroceryList()

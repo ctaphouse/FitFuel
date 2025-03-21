@@ -1,0 +1,292 @@
+@page "/grocerylists/{Id:int}"
+@using FitFuel.Shared.Dtos
+@using FitFuel.Client.Services
+@using System.Collections.Generic
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject GroceryListService GroceryListService
+
+<PageTitle>Grocery List</PageTitle>
+
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        @if (_loading)
+        {
+            <div class="flex justify-center items-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        }
+        else if (_groceryList == null)
+        {
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">
+                                Grocery list not found.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a href="/grocerylists" class="text-indigo-600 hover:text-indigo-800">
+                        &larr; Back to Grocery Lists
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-indigo-800">@_groceryList.Name</h1>
+                <div class="flex space-x-3">
+                    <button @onclick="PrintList" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Print
+                    </button>
+                    <a href="/grocerylists" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Back to Lists
+                    </a>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div class="p-6">
+                    <div class="flex justify-between mb-4">
+                        <div class="text-sm text-gray-600">
+                            Created: @_groceryList.CreatedDate.ToString("MMMM d, yyyy")
+                        </div>
+                        <div class="text-sm font-medium">
+                            <span class="text-green-600">@_groceryList.Items.Count(i => i.IsChecked)</span> / @_groceryList.Items.Count items checked
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded-md mb-6">
+                        <div class="text-sm text-gray-600 mb-2">Progress:</div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            @{
+                                var progressPercentage = _groceryList.Items.Any() 
+                                    ? (_groceryList.Items.Count(i => i.IsChecked) * 100) / _groceryList.Items.Count 
+                                    : 0;
+                            }
+                            <div class="bg-green-600 h-2.5 rounded-full" style="width: @progressPercentage%"></div>
+                        </div>
+                    </div>
+                    
+                    @if (!_groceryList.Items.Any())
+                    {
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded" role="alert">
+                            <p>This grocery list doesn't have any items.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="text-sm text-gray-500">
+                                    @if (_showChecked)
+                                    {
+                                        <span>Showing all items</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Showing unchecked items only</span>
+                                    }
+                                </div>
+                                <button @onclick="ToggleShowChecked" 
+                                        class="text-sm text-indigo-600 hover:text-indigo-800">
+                                    @(_showChecked ? "Hide checked items" : "Show all items")
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                @{
+                                    // Group items by item type
+                                    var groupedItems = _groceryList.Items
+                                        .Where(i => _showChecked || !i.IsChecked)
+                                        .GroupBy(i => i.ItemTypeName)
+                                        .OrderBy(g => g.Key);
+                                }
+                                
+                                @foreach (var group in groupedItems)
+                                {
+                                    <div class="border border-gray-200 rounded-md overflow-hidden">
+                                        <div class="bg-gray-50 px-4 py-2 text-sm font-medium text-gray-800">
+                                            @group.Key
+                                        </div>
+                                        <ul class="divide-y divide-gray-200">
+                                            @foreach (var item in group.OrderBy(i => i.ItemName))
+                                            {
+                                                <li class="@(item.IsChecked ? "bg-gray-50" : "")">
+                                                    <div class="flex items-center px-4 py-3">
+                                                        <input type="checkbox" 
+                                                               checked="@item.IsChecked" 
+                                                               @onchange="@(e => ToggleItemChecked(item, e.Value))"
+                                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                                                        <div class="ml-3 flex-grow">
+                                                            <p class="text-sm font-medium text-gray-900 @(item.IsChecked ? "line-through text-gray-500" : "")">
+                                                                @item.ItemName
+                                                            </p>
+                                                            <p class="text-sm text-gray-500">
+                                                                @item.Quantity @item.Measurement
+                                                            </p>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(item.Source) && item.Source == "Recipe" && !string.IsNullOrEmpty(item.SourceName))
+                                                        {
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                @item.SourceName
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Print-friendly version that's hidden from normal view -->
+<div id="printable-content" class="hidden">
+    @if (_groceryList != null)
+    {
+        <div class="p-4">
+            <h1 class="text-2xl font-bold mb-4">@_groceryList.Name</h1>
+            <p class="mb-4">Created: @_groceryList.CreatedDate.ToString("MMMM d, yyyy")</p>
+            
+            @if (_groceryList.Items.Any())
+            {
+                <!-- Group items by item type for the printable version -->
+                @foreach (var group in _groceryList.Items.GroupBy(i => i.ItemTypeName).OrderBy(g => g.Key))
+                {
+                    <div class="mb-6">
+                        <h2 class="text-xl font-medium mb-2">@group.Key</h2>
+                        <ul class="space-y-2">
+                            @foreach (var item in group.OrderBy(i => i.ItemName))
+                            {
+                                <li>
+                                    <div class="flex items-start">
+                                        <div class="mr-2">□</div> <!-- Checkbox placeholder for printing -->
+                                        <div>
+                                            <span class="font-medium">@item.ItemName</span>
+                                            <span>(@item.Quantity @item.Measurement)</span>
+                                            @if (!string.IsNullOrEmpty(item.Source) && item.Source == "Recipe" && !string.IsNullOrEmpty(item.SourceName))
+                                            {
+                                                <span class="ml-1 text-gray-500">- @item.SourceName</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private GroceryListDto? _groceryList;
+    private bool _loading = true;
+    private bool _showChecked = true; // Show checked items by default
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroceryList();
+    }
+    
+    private async Task LoadGroceryList()
+    {
+        _loading = true;
+        try
+        {
+            _groceryList = await GroceryListService.GetGroceryListAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to load grocery list: {ex.Message}");
+        }
+        _loading = false;
+    }
+    
+    private void ToggleShowChecked()
+    {
+        _showChecked = !_showChecked;
+    }
+    
+    private async Task ToggleItemChecked(GroceryListItemDto item, object? isChecked)
+    {
+        if (isChecked is bool checkedvalue)
+        {
+            item.IsChecked = checkedvalue;
+            
+            try
+            {
+                // Update the item's checked status in the database
+                var success = await GroceryListService.ToggleGroceryListItemAsync(Id, item.ItemId);
+                
+                if (!success)
+                {
+                    // If the update failed, revert the local change
+                    item.IsChecked = !checkedvalue;
+                    await DialogService.ShowMessageBox("Error", "Failed to update item status.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // If an exception occurred, revert the local change
+                item.IsChecked = !checkedvalue;
+                await DialogService.ShowMessageBox("Error", $"Failed to update item status: {ex.Message}");
+            }
+        }
+    }
+    
+    private async Task PrintList()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("printGroceryList");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowMessageBox("Error", $"Failed to print grocery list: {ex.Message}");
+        }
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register the print function
+            await JSRuntime.InvokeVoidAsync("registerPrintFunction");
+        }
+    }
+}
+
+@code {
+    [JSInvokable]
+    public static void PrintContent()
+    {
+        Console.WriteLine("Print function invoked");
+    }
+}
