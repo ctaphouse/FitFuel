@@ -326,54 +326,53 @@
         _loading = false;
     }
     
-    private async Task HandleValidSubmit()
+// In FitFuel.Client/Pages/Recipe/RecipeCreate.razor
+// Replace the HandleValidSubmit method with this fixed version:
+
+private async Task HandleValidSubmit()
+{
+    try
     {
-        try
+        _loading = true;
+        _errorMessage = string.Empty;
+        var result = await RecipeService.CreateRecipeAsync(_recipe);
+        if (result.success && result.id.HasValue)
         {
-            _loading = true;
-            _errorMessage = string.Empty;
-            var result = await RecipeService.CreateRecipeAsync(_recipe);
-            if (result.success)
-            {
-                // Get the created recipe ID by fetching recipes sorted by newest
-                var recipes = await RecipeService.GetRecipesAsync(1, 10);
-                var createdRecipe = recipes.Items.FirstOrDefault(r => r.Name == _recipe.Name);
-                
-                if (createdRecipe != null)
-                {
-                    _recipeId = createdRecipe.Id;
-                    _recipeCreated = true;
-                    
-                    // Pre-fill the recipe ID for new ingredients
-                    _newIngredient = new RecipeItemCreateDto { RecipeId = _recipeId };
-                    
-                    // Copy to update DTO for potential updates
-                    _recipeUpdate.Name = _recipe.Name;
-                    _recipeUpdate.Servings = _recipe.Servings;
-                    
-                    await DialogService.ShowMessageBox("Success", "Recipe details saved. Now add ingredients to your recipe.");
-                }
-                else
-                {
-                    await DialogService.ShowMessageBox("Warning", "Recipe created but could not retrieve ID. Redirecting to recipes list.");
-                    NavigationManager.NavigateTo("/recipes");
-                }
-            }
-            else
-            {
-                // Display uniqueness error
-                _errorMessage = result.message ?? "Failed to create recipe. The recipe name may already be in use.";
-                _loading = false;
-                StateHasChanged();
-            }
+            // Use the ID returned directly from the API
+            _recipeId = result.id.Value;
+            _recipeCreated = true;
+            
+            // Pre-fill the recipe ID for new ingredients
+            _newIngredient = new RecipeItemCreateDto { RecipeId = _recipeId };
+            
+            // Copy to update DTO for potential updates
+            _recipeUpdate.Name = _recipe.Name;
+            _recipeUpdate.Servings = _recipe.Servings;
+            
+            await DialogService.ShowMessageBox("Success", "Recipe details saved. Now add ingredients to your recipe.");
+            
+            // Load ingredients (should be empty for a new recipe, but initializes the list)
+            await LoadIngredients();
         }
-        catch (Exception ex)
+        else
         {
-            _errorMessage = $"Error creating recipe: {ex.Message}";
+            // Display uniqueness error
+            _errorMessage = result.message ?? "Failed to create recipe. The recipe name may already be in use.";
             _loading = false;
             StateHasChanged();
         }
     }
+    catch (Exception ex)
+    {
+        _errorMessage = $"Error creating recipe: {ex.Message}";
+        _loading = false;
+        StateHasChanged();
+    }
+    finally
+    {
+        _loading = false;
+    }
+}
     
     private async Task UpdateRecipe()
     {

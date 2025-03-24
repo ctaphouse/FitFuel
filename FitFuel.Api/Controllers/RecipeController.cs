@@ -4,10 +4,6 @@ using AutoMapper;
 using FitFuel.Api.Data;
 using FitFuel.Api.Models;
 using FitFuel.Shared.Dtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace FitFuel.Api.Controllers
 {

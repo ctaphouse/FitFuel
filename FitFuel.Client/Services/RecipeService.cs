@@ -15,17 +15,17 @@ namespace FitFuel.Client.Services
         }
 
         public async Task<PaginatedResponseDto<RecipeDto>> GetRecipesAsync(
-            int pageNumber = 1, 
-            int pageSize = 10, 
+            int pageNumber = 1,
+            int pageSize = 10,
             string? searchTerm = null)
         {
             var queryString = $"api/Recipe?pageNumber={pageNumber}&pageSize={pageSize}";
-            
+
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 queryString += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
             }
-            
+
             var response = await _httpClient.GetFromJsonAsync<ApiResponse<PaginatedResponseDto<RecipeDto>>>(queryString);
             return response?.Data ?? new PaginatedResponseDto<RecipeDto>();
         }
@@ -36,14 +36,23 @@ namespace FitFuel.Client.Services
             return response?.Data;
         }
 
-        public async Task<(bool success, string? message)> CreateRecipeAsync(RecipeCreateDto recipe)
+        // In FitFuel.Client/Services/RecipeService.cs
+        // Replace the CreateRecipeAsync method with this improved version:
+
+        public async Task<(bool success, int? id, string? message)> CreateRecipeAsync(RecipeCreateDto recipe)
         {
             var content = new StringContent(JsonSerializer.Serialize(recipe), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("api/Recipe", content);
-            
+
             if (response.IsSuccessStatusCode)
             {
-                return (true, null);
+                // Parse the response to get the created recipe ID
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<RecipeDto>>();
+                if (apiResponse?.Data != null)
+                {
+                    return (true, apiResponse.Data.Id, null);
+                }
+                return (true, null, null);
             }
             else
             {
@@ -51,11 +60,11 @@ namespace FitFuel.Client.Services
                 try
                 {
                     var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<RecipeDto>>();
-                    return (false, errorResponse?.Message ?? "Failed to create recipe");
+                    return (false, null, errorResponse?.Message ?? "Failed to create recipe");
                 }
                 catch
                 {
-                    return (false, "Failed to create recipe. An error occurred.");
+                    return (false, null, "Failed to create recipe. An error occurred.");
                 }
             }
         }
@@ -64,7 +73,7 @@ namespace FitFuel.Client.Services
         {
             var content = new StringContent(JsonSerializer.Serialize(recipe), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync($"api/Recipe/{id}", content);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return (true, null);
@@ -87,7 +96,7 @@ namespace FitFuel.Client.Services
         public async Task<bool> DeleteRecipeAsync(int id)
         {
             var response = await _httpClient.DeleteAsync($"api/Recipe/{id}");
-            
+
             return response.IsSuccessStatusCode;
         }
 
