@@ -138,10 +138,10 @@ namespace FitFuel.Api.Controllers
                 // Check if the measurement already exists for this recipe
                 var measurementExists = await _context.AdjustedRecipes
                     .AnyAsync(ar => ar.RecipeId == adjustedRecipeCreateDto.RecipeId && 
-                                   ar.Measurement.ToLower() == adjustedRecipeCreateDto.Measurement.ToLower());
+                                   ar.Servings == adjustedRecipeCreateDto.Servings);
                 if (measurementExists)
                 {
-                    return BadRequest(ApiResponse<AdjustedRecipeDto>.ErrorResponse($"Measurement '{adjustedRecipeCreateDto.Measurement}' already exists for this recipe"));
+                    return BadRequest(ApiResponse<AdjustedRecipeDto>.ErrorResponse($"Servings '{adjustedRecipeCreateDto.Servings}' already exists for this recipe"));
                 }
 
                 var adjustedRecipe = _mapper.Map<AdjustedRecipe>(adjustedRecipeCreateDto);
@@ -188,10 +188,10 @@ namespace FitFuel.Api.Controllers
                 var measurementExists = await _context.AdjustedRecipes
                     .AnyAsync(ar => ar.Id != id && 
                                    ar.RecipeId == adjustedRecipe.RecipeId && 
-                                   ar.Measurement.ToLower() == adjustedRecipeUpdateDto.Measurement.ToLower());
+                                   ar.Servings == adjustedRecipeUpdateDto.Servings);
                 if (measurementExists)
                 {
-                    return BadRequest(ApiResponse<AdjustedRecipeDto>.ErrorResponse($"Measurement '{adjustedRecipeUpdateDto.Measurement}' already exists for this recipe"));
+                    return BadRequest(ApiResponse<AdjustedRecipeDto>.ErrorResponse($"Servings '{adjustedRecipeUpdateDto.Servings}' already exists for this recipe"));
                 }
 
                 _mapper.Map(adjustedRecipeUpdateDto, adjustedRecipe);

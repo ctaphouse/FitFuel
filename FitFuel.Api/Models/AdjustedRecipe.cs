@@ -8,8 +8,6 @@ namespace FitFuel.Api.Models
         [Key]
         public int Id { get; set; }
         public int RecipeId { get; set; }
-
-        public required string Measurement { get; set; }
         
         public int Servings { get; set; }
         

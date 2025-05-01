@@ -4,6 +4,7 @@ using FitFuel.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitFuel.Api.Migrations
 {
     [DbContext(typeof(FitFuelDbContext))]
-    partial class FitFuelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250501182713_remove adjusted recipe measurement column")]
+    partial class removeadjustedrecipemeasurementcolumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

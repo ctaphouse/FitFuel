@@ -11,10 +11,6 @@ namespace FitFuel.Api.Data.Configurations
             builder.ToTable("AdjustedRecipes");
             
             builder.HasKey(ar => ar.Id);
-            
-            builder.Property(ar => ar.Measurement)
-                .IsRequired()
-                .HasMaxLength(50);
                 
             builder.Property(ar => ar.Servings)
                 .IsRequired();
@@ -27,7 +23,7 @@ namespace FitFuel.Api.Data.Configurations
                 .IsRequired();
                 
             // Add index to prevent duplicate measurements for the same recipe
-            builder.HasIndex(ar => new { ar.RecipeId, ar.Measurement })
+            builder.HasIndex(ar => new { ar.RecipeId, ar.Servings })
                 .IsUnique();
         }
     }
